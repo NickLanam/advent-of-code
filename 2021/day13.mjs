@@ -38,8 +38,6 @@ function solve({ dots, folds }, part1) {
       const [, dir, val] = fold.match(/^fold along ([xy])=(\d+)$/);
       return { dir, val: +val };
     });
-    const maxX = dots.reduce((a, [x]) => Math.max(a, x), 0);
-    const maxY = dots.reduce((a, [,y]) => Math.max(a, y), 0);
-    return { dots, folds, maxX, maxY };
+    return { dots, folds };
   }
 );
