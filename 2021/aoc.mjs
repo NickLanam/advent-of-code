@@ -28,7 +28,8 @@ export default function aoc(
   p1expect,
   p2func,
   p2expect,
-  parseFunc
+  parseFunc,
+  testOnly = false,
 ) {
   console.log(`Advent of Code ${year}, Day ${day}`);
   const process = typeof parseFunc === 'function' ? parseFunc : x => x;
@@ -42,16 +43,22 @@ export default function aoc(
     console.error('Test for star 1 failed!');
     console.error('  Expected:', p1expect);
     console.error('  Actual:', p1s);
+  } else if (testOnly) {
+    console.log('Test for star 1 passed.');
+  } else {
+    console.log('Star 1:', p1func(getInput()));
   }
+
   const p2s = p2func(getSample());
   if (p2s !== p2expect) {
     console.error('Test for star 2 failed!');
     console.error('  Expected:', p2expect);
     console.error('  Actual:', p2s);
+  } else if (testOnly) {
+    console.log('Test for star 2 passed.');
+  } else {
+    console.log('Star 2:', p2func(getInput()));
   }
-
-  console.log('Star 1:', p1func(getInput()));
-  console.log('Star 2:', p2func(getInput()));
 }
 
 function parse(raw) {
