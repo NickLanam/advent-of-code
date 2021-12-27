@@ -1,25 +1,8 @@
-function step(x, y, vx, vy) {
-  return {
-    x: x + dx,
-    y: y + dy,
-    vx: vx < 0 ? vx + 1 : (vx > 0 ? vx - 1 : 0), // Towards 0
-    vy: vy - 1, // Towards negative infinity
-  }
-}
+import { triangulate, triangularRoot } from './utils/number.mjs';
 
 // Test if x and y are within the hitbox.
 function hit(x, y, xmin, xmax, ymin, ymax) {
   return x >= xmin && x <= xmax && y >= ymin && y <= ymax;
-}
-
-// Triangular numbers, which we last saw on day 7.
-function triangulate(n) {
-  return (n * (Math.abs(n) + 1)) / 2;
-}
-
-// If this isn't a whole number, x isn't triangular; but we still have use of the reference point.
-function triangularRoot(x) {
-  return Math.sign(x) * (Math.sqrt(8 * Math.abs(x) + 1) - 1) / 2;
 }
 
 function paths(xmin, xmax, ymin, ymax) {
