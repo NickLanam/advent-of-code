@@ -40,24 +40,24 @@ export default function aoc(
 
   const p1s = p1func(getSample());
   if (p1s !== p1expect) {
-    console.error('Test for star 1 failed!');
-    console.error('  Expected:', p1expect);
-    console.error('  Actual:', p1s);
+    console.error('\u001b[1;31m✕  Test for star 1 failed!\u001b[0m');
+    console.error('   \u001b[1;90mExpected\u001b[0m:', p1expect);
+    console.error('   \u001b[1;90mActual\u001b[0m:  ', p1s);
   } else if (testOnly) {
-    console.log('Test for star 1 passed.');
+    console.log('\u001b[1;32m✓\u001b[0m  Test for star 1 passed.');
   } else {
-    console.log('Star 1:', p1func(getInput()));
+    console.log('\u001b[1;93m★\u001b[0m  Star 1:', p1func(getInput()));
   }
 
   const p2s = p2func(getSample());
   if (p2s !== p2expect) {
-    console.error('Test for star 2 failed!');
-    console.error('  Expected:', p2expect);
-    console.error('  Actual:', p2s);
+    console.error('\u001b[1;31m✕  Test for star 2 failed!\u001b[0m');
+    console.error('   \u001b[1;90mExpected\u001b[0m:', p2expect);
+    console.error('   \u001b[1;90mActual\u001b[0m:  ', p2s);
   } else if (testOnly) {
-    console.log('Test for star 2 passed.');
+    console.log('\u001b[1;32m✓\u001b[0m  Test for star 2 passed.');
   } else {
-    console.log('Star 2:', p2func(getInput()));
+    console.log('\u001b[1;93m★\u001b[0m  Star 2:', p2func(getInput()));
   }
 }
 
