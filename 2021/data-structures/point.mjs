@@ -1,7 +1,11 @@
+const IDENTIFIER = Symbol('Point3D');
+
 export class Point3D {
+  [IDENTIFIER];
+
   static #expectComparable(a, b) {
-    if (!a instanceof Point3D || !b instanceof Point3D) {
-      throw new Error('Expected to points, got something else.');
+    if (!(a instanceof Point3D) || !(b instanceof Point3D)) {
+      throw new Error(`Expected two points, got ${typeof a} and ${typeof b}`);
     }
   }
 
@@ -21,17 +25,22 @@ export class Point3D {
   }
 
   static manhattanDistance(a, b) {
-    this.#expectComparable(a, b);
+    Point3D.#expectComparable(a, b);
     return Math.abs(b.x - a.x) + Math.abs(b.y - a.y) + Math.abs(b.z - a.z);
   }
 
   static squaredDistance(a, b) {
-    this.#expectComparable(a, b);
+    Point3D.#expectComparable(a, b);
     return (b.x - a.x)**2 + (b.y - a.y)**2 + (b.z - a.z)**2;
   }
 
   static distance(a, b) {
     return Math.sqrt(this.squaredDistance(a, b));
+  }
+
+  static difference(a, b) {
+    Point3D.#expectComparable(a, b);
+    return [b.x - a.x, b.y - a.y, b.z - a.z];
   }
 
   constructor(x, y, z) {
@@ -53,7 +62,7 @@ export class Point3D {
   }
 
   pitch(x, y, z) {
-    return new Point3D( x,  z, -y); // Look 90 degrees up
+    return new Point3D( x, -z, y); // Look 90 degrees up
   }
 
   pitch2(x, y, z) {
@@ -61,7 +70,7 @@ export class Point3D {
   }
 
   pitch3(x, y, z) {
-    return new Point3D( x, -z,  y); // Look 90 degrees down
+    return new Point3D( x,  z, -y); // Look 90 degrees down
   }
 
   yaw(x, y, z) {
@@ -89,47 +98,92 @@ export class Point3D {
    * @param {number} which 0-47 inclusive.
    */
   orient(which) {
-    let [x, y, z] = [which > 23 ? -this.x : this.x, this.y, this.z];
+    const flip = which >= 24 ? -1 : 1;
+    let [x, y, z] = [flip * this.x, flip * this.y, flip * this.z];
     switch (which % 24) {
       // Facing: +z (default).
-      case 0: break;
-      case 1: [x, y, z] = [y, -x, z]; break;
-      case 2: [x, y, z] = [-x, -y, z]; break;
-      case 3: [x, y, z] = [-y, x, z]; break;
+      case 0:  [x, y, z] = [ x,  y,  z]; break;
+      case 1:  [x, y, z] = [ y, -x,  z]; break;
+      case 2:  [x, y, z] = [-x, -y,  z]; break;
+      case 3:  [x, y, z] = [-y,  x,  z]; break;
 
       // Facing: +x (yaw).
-      case 4: [x, y, z] = [z, y, -x]; break;
-      case 5: [x, y, z] = [y, -z, -x]; break;
-      case 6: [x, y, z] = [-z, -y, -x]; break;
-      case 7: [x, y, z] = [-y, z, -x]; break;
+      case 4:  [x, y, z] = [ z,  y, -x]; break;
+      case 5:  [x, y, z] = [ y, -z, -x]; break;
+      case 6:  [x, y, z] = [-z, -y, -x]; break;
+      case 7:  [x, y, z] = [-y,  z, -x]; break;
 
       // Facing: -z (yaw2)
-      case 8: [x, y, z] = [-x, y, -z]; break;
-      case 9: [x, y, z] = [y, x, -z]; break;
-      case 10: [x, y, z] = [x, -y, -z]; break;
-      case 11: [x, y, z] = [y, -x, -z]; break;
+      case 8:  [x, y, z] = [-x,  y, -z]; break;
+      case 9:  [x, y, z] = [ y,  x, -z]; break;
+      case 10: [x, y, z] = [ x, -y, -z]; break;
+      case 11: [x, y, z] = [-y, -x, -z]; break;
 
       // Facing: -x (yaw3)
-      case 12: [x, y, z] = [-z, y, x]; break;
-      case 13: [x, y, z] = [y, z, x]; break;
-      case 14: [x, y, z] = [z, -y, x]; break;
-      case 15: [x, y, z] = [-y, -z, x]; break;
+      case 12: [x, y, z] = [-z,  y,  x]; break;
+      case 13: [x, y, z] = [ y,  z,  x]; break;
+      case 14: [x, y, z] = [ z, -y,  x]; break;
+      case 15: [x, y, z] = [-y, -z,  x]; break;
 
       // Facing: +y (pitch)
-      case 16: [x, y, z] = [x, z, -y]; break;
-      case 17: [x, y, z] = [z, -x, -y]; break;
-      case 18: [x, y, z] = [-x, -z, -y]; break;
-      case 19: [x, y, z] = [-z, x, -y]; break;
+      case 16: [x, y, z] = [ x, -z,  y]; break;
+      case 17: [x, y, z] = [-z, -x,  y]; break;
+      case 18: [x, y, z] = [-x,  z,  y]; break;
+      case 19: [x, y, z] = [ z,  x,  y]; break;
 
       // Facing: -y (pitch3)
-      case 20: [x, y, z] = [x, -z, y]; break;
-      case 21: [x, y, z] = [-z, -x, y]; break;
-      case 22: [x, y, z] = [-x, z, y]; break;
-      case 23: [x, y, z] = [z, x, y]; break;
+      case 20: [x, y, z] = [ x,  z, -y]; break;
+      case 21: [x, y, z] = [ z, -x, -y]; break;
+      case 22: [x, y, z] = [-x, -z, -y]; break;
+      case 23: [x, y, z] = [-z,  x, -y]; break;
 
-      default: throw new Error('Out of bounds? ' + which);
+      default: throw new Error('Unknown rotation: ' + which);
     }
     return new Point3D(x, y, z);
+  }
+
+  /** Undoes whatever orient(which) does. */
+  orientReverse(which) {
+    let [x, y, z] = [this.x, this.y, this.z];
+    switch (which % 24) {
+      case 0:  [x, y, z] = [ x,  y,  z]; break;
+      case 1:  [y, x, z] = [ x, -y,  z]; break;
+      case 2:  [x, y, z] = [-x, -y,  z]; break;
+      case 3:  [y, x, z] = [-x,  y,  z]; break;
+      case 4:  [z, y, x] = [ x,  y, -z]; break;
+      case 5:  [y, z, x] = [ x, -y, -z]; break;
+      case 6:  [z, y, x] = [-x, -y, -z]; break;
+      case 7:  [y, z, x] = [-x,  y, -z]; break;
+      case 8:  [x, y, z] = [-x,  y, -z]; break;
+      case 9:  [y, x, z] = [ x,  y, -z]; break;
+      case 10: [x, y, z] = [ x, -y, -z]; break;
+      case 11: [y, x, z] = [-x, -y, -z]; break;
+      case 12: [z, y, x] = [-x,  y,  z]; break;
+      case 13: [y, z, x] = [ x,  y,  z]; break;
+      case 14: [z, y, x] = [ x, -y,  z]; break;
+      case 15: [y, z, x] = [-x, -y,  z]; break;
+      case 16: [x, z, y] = [ x, -y,  z]; break;
+      case 17: [z, x, y] = [-x, -y,  z]; break;
+      case 18: [x, z, y] = [-x,  y,  z]; break;
+      case 19: [z, x, y] = [ x,  y,  z]; break;
+      case 20: [x, z, y] = [ x,  y, -z]; break;
+      case 21: [z, x, y] = [ x, -y, -z]; break;
+      case 22: [x, z, y] = [-x, -y, -z]; break;
+      case 23: [z, x, y] = [-x,  y, -z]; break;
+
+      default: throw new Error('Unknown rotation: ' + which);
+    }
+    return which >= 24 ? new Point3D(-x, -y, -z) : new Point3D(x, y, z);
+  }
+
+  add(other) {
+    Point3D.#expectComparable(this, other);
+    return new Point3D(this.x + other.x, this.y + other.y, this.z + other.z);
+  }
+
+  subtract(other) {
+    Point3D.#expectComparable(this, other);
+    return new Point3D(this.x - other.x, this.y - other.y, this.z - other.z);
   }
 
   translate(dx, dy, dz) {
@@ -137,7 +191,7 @@ export class Point3D {
   }
 
   equals(other) {
-    this.#expectComparable(this, other);
+    Point3D.#expectComparable(this, other);
     return this.x === other.x && this.y === other.y && this.z === other.z;
   }
 
@@ -152,5 +206,10 @@ export class Point3D {
 
   toString() {
     return [this.x, this.y, this.z].join(',');
+  }
+
+  [Symbol.toPrimitive](hint) {
+    if (hint === 'string') return this.toString();
+    return null;
   }
 }
