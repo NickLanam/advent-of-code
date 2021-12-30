@@ -13,13 +13,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * 
  * Reads sample input from `input/day${day}.sample.txt`, and real from `input/day${day}.txt`.
  *
- * @param {number} year 
- * @param {number} day 
- * @param {function} p1func 
- * @param {any} p1expect 
- * @param {function} p2func 
- * @param {any} p2expect 
- * @param {function} [parseFunc]
+ * @param {number} year Integer, 2015 <= year <= $CURRENT_YEAR
+ * @param {number} day  Integer, 1 <= day <= 25
+ * @param {function} p1func (parsedData, isSample) => solution
+ * @param {any} p1expect Expected output from running p1func on day$DAY.sample.txt
+ * @param {function} p2func (parsedData, isSample) => solution
+ * @param {any} p2expect Expected output from running p2func on day$DAY.sample.txt
+ * @param {function} [parseFunc] Takes lines of the input, returns something useful to p1func and p2func.
  */
 export default function aoc(
   year,
@@ -38,7 +38,7 @@ export default function aoc(
   const getSample = () => process(load(day, true));
   const getInput = () => process(load(day, false));
 
-  const p1s = p1func(getSample());
+  const p1s = p1func(getSample(), true);
   if (p1s !== p1expect) {
     console.error('\u001b[1;31m✕  Test for star 1 failed!\u001b[0m');
     console.error('   \u001b[1;90mExpected\u001b[0m:', p1expect);
@@ -46,10 +46,10 @@ export default function aoc(
   } else if (testOnly) {
     console.log('\u001b[1;32m✓\u001b[0m  Test for star 1 passed.');
   } else {
-    console.log('\u001b[1;93m★\u001b[0m  Star 1:', p1func(getInput()));
+    console.log('\u001b[1;93m★\u001b[0m  Star 1:', p1func(getInput(), false));
   }
 
-  const p2s = p2func(getSample());
+  const p2s = p2func(getSample(), true);
   if (p2s !== p2expect) {
     console.error('\u001b[1;31m✕  Test for star 2 failed!\u001b[0m');
     console.error('   \u001b[1;90mExpected\u001b[0m:', p2expect);
@@ -57,7 +57,7 @@ export default function aoc(
   } else if (testOnly) {
     console.log('\u001b[1;32m✓\u001b[0m  Test for star 2 passed.');
   } else {
-    console.log('\u001b[1;93m★\u001b[0m  Star 2:', p2func(getInput()));
+    console.log('\u001b[1;93m★\u001b[0m  Star 2:', p2func(getInput(), false));
   }
 }
 
