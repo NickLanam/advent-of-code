@@ -1,32 +1,14 @@
 (await import('./aoc.mjs')).default(
   2022, 4,
-  (data) => {
-    let dupes = 0;
-    for (const [[ll, lr], [rl, rr]] of data) {
-      if ((ll >= rl && lr <= rr) || (rl >= ll && rr <= lr)) dupes++;
-    }
-    return dupes;
-  }, 2,
-  (data) => {
-    let dupes = 0;
-    for (const [[ll, lr], [rl, rr]] of data) {
-      for (let x = ll; x <= lr; x++) {
-        if (x >= rl && x <= rr) {
-          dupes++;
-          break;
-        }
-      }
-    }
-    return dupes;
-  }, 4,
-  (data) => {
-    let pairs = [];
-    for (const line of data) {
-      const [l, r] = line.split(',');
-      const [ll, lr] = l.split('-').map(n => +n);
-      const [rl, rr] = r.split('-').map(n => +n);
-      pairs.push([[ll, lr], [rl, rr]]);
-    }
-    return pairs;
-  }
+  (data) => data.filter(([[ll, lr], [rl, rr]]) => (
+    (ll >= rl && lr <= rr)
+    || (rl >= ll && rr <= lr)
+  )).length, 2,
+  (data) => data.filter(([[ll, lr], [rl, rr]]) => (
+    (ll >= rl && ll <= rr)
+    || (lr >= rl && lr <= rr)
+    || (rl >= ll && rl <= lr)
+    || (rr >= ll && rr <= lr)
+  )).length, 4,
+  data => data.map(line => line.split(',').map(half => half.split('-').map(n => +n)))
 );
