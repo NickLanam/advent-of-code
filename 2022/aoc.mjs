@@ -29,14 +29,15 @@ export default function aoc(
   p2func,
   p2expect,
   parseFunc,
+  trimLines = true, // Some challenges intentionally have leading or trailing whitespace in the lines.
   testOnly = false,
 ) {
   console.log(`Advent of Code ${year}, Day ${day}`);
   const process = typeof parseFunc === 'function' ? parseFunc : x => x;
 
   // Re-invoke on each test to guarantee each test gets unmodified input
-  const getSample = () => process(load(day, true));
-  const getInput = () => process(load(day, false));
+  const getSample = () => process(load(day, true, trimLines));
+  const getInput = () => process(load(day, false, trimLines));
 
   const p1s = p1func(getSample(), true);
   if (p1s !== p1expect) {
@@ -61,8 +62,8 @@ export default function aoc(
   }
 }
 
-function parse(raw) {
-  const lines = String(raw).split('\n').map(l => l.trim());
+function parse(raw, trimLines = true) {
+  const lines = String(raw).split('\n').map(l => trimLines ? l.trim() : l);
   // Drop leading and trailing newlines, as those are usually artifacts.
   while (lines[0] === '') lines.shift();
   while (lines[lines.length - 1] === '') lines.pop();
@@ -75,7 +76,7 @@ function parse(raw) {
   return lines;
 }
 
-function load(day, sample = false) {
+function load(day, sample = false, trimLines = true) {
   const raw = readFileSync(`${__dirname}/input/day${day}${sample ? '.sample' : ''}.txt`);
-  return parse(raw);
+  return parse(raw, trimLines);
 }
