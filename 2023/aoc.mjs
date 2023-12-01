@@ -32,7 +32,7 @@ export default function aoc(
   trimLines = true, // Some challenges intentionally have leading or trailing whitespace in the lines.
   testOnly = false,
 ) {
-  console.log(`Advent of Code ${year}, Day ${day}`);
+  console.log(`🎄 \u001b[0;1mAdvent of Code\u001b[0m \u001b[32;1m${year}\u001b[0m, Day \u001b[32;1m${day}\u001b[0m 🎄`);
   const process = typeof parseFunc === 'function' ? parseFunc : x => x;
 
   // Re-invoke on each test to guarantee each test gets unmodified input

@@ -23,7 +23,7 @@ if [[ -f "$CODE_FILE" ]]; then
   exit 0
 fi
 
-awk '{printf "%s", l $0; l=RT}' > "$CODE_FILE" << EOF
+awk '{printf "%s\n", l $0; l=RT}' > "$CODE_FILE" << EOF
 (await import('./aoc.mjs')).default(
   ${YEAR}, ${1},
   (data) => {

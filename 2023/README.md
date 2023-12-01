@@ -28,6 +28,11 @@ My solutions for [Advent of Code 2023](https://adventofcode.com/2023).
       part2ExpectedOutputForSample: any,
       // If omitted, leaves the raw input alone.
       rawInputToUsefulInput?: (rawLines: string[]) => Input,
+      // By default, gets rid of leading/trailing blank lines and extra spaces.
+      trimLines?: boolean = true,
+      // If true, don't run on your real input, but do run on the samples.
+      // Useful if your solution is not yet ready for full data.
+      testOnly?: boolean = false,
     ) {...}
     ```
   * When run, it loads `input/day${day}.sample.txt` and `input/day${day}.txt`, splits both on newlines, and trims
