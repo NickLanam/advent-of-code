@@ -1,66 +1,39 @@
-import { sum } from './utils/array.mjs';
-
 (await import('./aoc.mjs')).default(
   2023, 3,
-  (data) => {
-    const grid = data.map(l => l.split(''));
-    let foundPartNumbers = [];
-    let digitY = 0;
-    let digitXs= [];
-    for (let y = 0; y < grid.length; y++) {
-      for (let x = 0; x < grid[y].length; x++) {
-        if (!Number.isNaN(+grid[y][x])) {
-          digitY = y;
-          digitXs.push(x);
-        } else if (digitXs.length) {
-          const left = digitXs[0];
-          const right = digitXs[digitXs.length - 1];
-          const num = +grid[digitY].slice(left, right + 1).join('');
-          if (Number.isNaN(num)) {
-            console.error('Missed a spot', {y,left,right,num});
-            throw new Error();
-          }
-          let good = false;
-          neighborCheck: for (let ly = digitY - 1; ly <= digitY + 1; ly++) {
-            for (let lx = left - 1; lx <= right + 1; lx++) {
-              if (grid[ly]?.[lx] == null) continue;
-              let c = grid[ly][lx];
-              if (Number.isNaN(+c) && c !== '.') {
-                good = true;
-                break neighborCheck;
-              }
-            }
-          }
-          if (good) {
-            foundPartNumbers.push(num);
-          }
-          digitXs = [];
+  parsed => parsed.partNumbersSum, 4361,
+  parsed => parsed.gearRatiosSum, 467835,
+  (rawLines) => {
+    const grid = rawLines.map(line => line.split(''));
+    const gears = {};
+
+    // Answer storage
+    let partNumbersSum = 0;
+    let gearRatiosSum = 0;
+
+    // First pass: find the gears
+    // Finding the other symbols happens as a side effect in the second pass
+    for (let gy = 0; gy < grid.length; gy++) {
+      for (let gx = 0; gx < grid[gy].length; gx++) {
+        let cell = grid[gy][gx];
+        if (cell === '*') {
+          gears[`${gx},${gy}`] = [];
         }
       }
     }
-    return sum(foundPartNumbers);
-  }, 4361,
-  (data) => {
-    const grid = data.map(l => l.split(''));
-    const gears = {};
 
-    // First pass: find the gears.
-    for (let gy = 0; gy < grid.length; gy++) {
-      for (let gx = 0; gx < grid[gy].length; gx++) {
-        if (grid[gy][gx] === '*') gears[`${gx},${gy}`] = [];
-      }
-    }
-
-    // Second pass: find numbers, and if they are adjacent to a gear, add them to that gear's memory
-    // Very similar to part 1, but the innermost loop is different enough to write it out again.
+    // Second pass: find the numbers and their positions
     let digitY = 0;
     let digitXs= [];
     for (let y = 0; y < grid.length; y++) {
       for (let x = 0; x < grid[y].length; x++) {
         if (!Number.isNaN(+grid[y][x])) {
+          // Hold onto digits while they're coming in sequence.
+          // Note: lines may start or end in a number, but there are no lines
+          // that start with a number right after lines that end with one.
           digitY = y;
           digitXs.push(x);
         } else if (digitXs.length) {
+          // We reached something other than a digit, assemble the held number
           const left = digitXs[0];
           const right = digitXs[digitXs.length - 1];
           const num = +grid[digitY].slice(left, right + 1).join('');
@@ -68,12 +41,25 @@ import { sum } from './utils/array.mjs';
             console.error('Missed a spot', {y,left,right,num});
             throw new Error();
           }
+
+          // Check the neighbors (including diagonals) of the number
+          // Numbers with neighboring non-. symbols are part numbers
+          // Asterisks ("gears" in the story) memoize neighbor numbers
+          let hasNeighborSymbol = false;
           for (let ly = digitY - 1; ly <= digitY + 1; ly++) {
             for (let lx = left - 1; lx <= right + 1; lx++) {
               if (grid[ly]?.[lx] == null) continue;
-              let c = grid[ly][lx];
-              if (c === '*') {
+              const cell = grid[ly][lx];
+              if (cell === '*') {
+                // Tell the found gear that it has this neighbor
                 gears[`${lx},${ly}`].push(num);
+              }
+              if (Number.isNaN(+cell) && cell !== '.') {
+                // Mark this number as a part number (only once)
+                if (!hasNeighborSymbol) {
+                  partNumbersSum += num;
+                  hasNeighborSymbol = true;
+                }
               }
             }
           }
@@ -82,13 +68,15 @@ import { sum } from './utils/array.mjs';
       }
     }
 
-    // Third pass: for each gear, if it is adjacent to two numbers, multiply them together
-    let out = 0;
+    // Last step: for gears that have exacty two numeric neighbors,
+    // the ratio is those numbers multiplied together
     for (const block of Object.values(gears)) {
-      if (block.length === 2) out += block[0] * block[1];
+      if (block.length === 2) {
+        gearRatiosSum += block[0] * block[1];
+      }
     }
     
-    return out;
-  }, 467835,
-  data => data
+    // Solutions to both part 1 and part 2
+    return { partNumbersSum, gearRatiosSum };
+  }
 );
