@@ -7,12 +7,15 @@ My solutions for [Advent of Code 2023](https://adventofcode.com/2023).
 * Create an `input/` directory. This is `.gitignore`'d.
 * Put a file named `cookie.txt` in it, containing your login cookie to Advent of Code.
   * To get this: open dev tools in your browser, to the network tab. Reload the page. Check the cookies for the first request that gets made. It should have `session: SOME_STRING`. The `SOME_STRING` part is what goes into `cookie.txt`.
-* Run `prep.sh dayNum`, where `dayNum` ranges from 1-25. It does the following:
-  * Downloads that day's personal input to `input/dayX.txt`.
+* Run `../aoc.sh dayNum`, where `dayNum` ranges from 1-25. It does the following:
+  * Downloads that day's personal input to `input/dayX.txt`, if that hasn't done that yet or if it was last run before the puzzle unlocked.
   * Creates `input/dayX.sample.txt`, which you can dump that day's sample into.
   * If not already present, creates a `dayX.mjs` in this directory. Its contents are built from a template in `prep.sh`.
+  * Runs `node dayX.mjs` file.
 * Solve the challenge in code.
-* `node dayX.mjs`.
+* `../aoc.sh dayNum` again.
+  * This won't download the input if it already did, but it will run `node dayX.mjs` again.
+* It's recommended to symlink `aoc.sh` somewhere in your `$PATH`.
 
 ## Implementation
 
