@@ -5,7 +5,7 @@ if [ -z "${1}" ]; then
 fi
 
 YEAR=2023
-BASE="$(dirname "$0")"
+BASE="$(dirname $(realpath "$0"))"
 
 echo "Setup: Advent of Code ${YEAR}, Day ${1}, in ${BASE}"
 
