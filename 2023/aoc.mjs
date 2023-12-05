@@ -2,6 +2,8 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
+import { bold, green, red, brightBlack, brightYellow } from './utils/color.mjs';
+
 // __dirname isn't available in ES modules, but it can still be determined.
 // This would do strange things under Yarn PnP and other similar systems.
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -32,7 +34,7 @@ export default function aoc(
   trimLines = true, // Some challenges intentionally have leading or trailing whitespace in the lines.
   testOnly = false,
 ) {
-  console.log(`🎄 \u001b[0;1mAdvent of Code\u001b[0m \u001b[32;1m${year}\u001b[0m, Day \u001b[32;1m${day}\u001b[0m 🎄`);
+  console.log(`🎄 ${bold('Advent of Code')} ${bold(green(year))}, Day ${bold(green(day))} 🎄`);
   const process = typeof parseFunc === 'function' ? parseFunc : x => x;
 
   // Re-invoke on each test to guarantee each test gets unmodified input
@@ -41,24 +43,24 @@ export default function aoc(
 
   const p1s = p1func(getSample(), true);
   if (p1s !== p1expect) {
-    console.error('\u001b[1;31m✕  Test for star 1 failed!\u001b[0m');
-    console.error('   \u001b[1;90mExpected\u001b[0m:', p1expect);
-    console.error('   \u001b[1;90mActual\u001b[0m:  ', p1s);
+    console.error(bold(red('✕  Test for star 1 failed!')));
+    console.error(`${bold(brightBlack('   Expected'))}:`, p1expect);
+    console.error(`${bold(brightBlack('   Actual'))}:`, p1s);
   } else if (testOnly) {
-    console.log('\u001b[1;32m✓\u001b[0m  Test for star 1 passed.');
+    console.log(`${bold(green('✓'))}  Test for star 1 passed.`);
   } else {
-    console.log('\u001b[1;93m★\u001b[0m  Star 1:', p1func(getInput(), false));
+    console.log(` ${bold(brightYellow('★'))} Star 1:`, p1func(getInput(), false));
   }
 
   const p2s = p2func(getSample(), true);
   if (p2s !== p2expect) {
-    console.error('\u001b[1;31m✕  Test for star 2 failed!\u001b[0m');
-    console.error('   \u001b[1;90mExpected\u001b[0m:', p2expect);
-    console.error('   \u001b[1;90mActual\u001b[0m:  ', p2s);
+    console.error(bold(red('✕  Test for star 2 failed!')));
+    console.error(`${bold(brightBlack('   Expected'))}:`, p2expect);
+    console.error(`${bold(brightBlack('   Actual'))}:`, p2s);
   } else if (testOnly) {
-    console.log('\u001b[1;32m✓\u001b[0m  Test for star 2 passed.');
+    console.log(`${bold(green('✓'))}  Test for star 2 passed.`);
   } else {
-    console.log('\u001b[1;93m★\u001b[0m  Star 2:', p2func(getInput(), false));
+    console.log(` ${bold(brightYellow('★'))} Star 2:`, p2func(getInput(), false));
   }
 }
 
@@ -70,7 +72,7 @@ function parse(raw, trimLines = true) {
 
   // Check that the input actually had contents, and that it wasn't downloaded too early
   if (lines.length === 0 || lines[0].startsWith("Please don't")) {
-    console.error('Sample is blank, or input is blank, or input was downloaded too early.');
+    console.error(red('Sample is blank, or input is blank, or input was downloaded too early.'));
     process.exit(1);
   }
   return lines;
