@@ -24,14 +24,22 @@ if [[ -f "$CODE_FILE" ]]; then
 fi
 
 awk '{printf "%s\n", l $0; l=RT}' > "$CODE_FILE" << EOF
-(await import('./aoc.mjs')).default(
-  ${YEAR}, ${1},
-  (data) => {
-    return 'NYI';
-  }, 'NYI',
-  (data) => {
-    return 'NYI';
-  }, 'NYI',
-  data => data
-);
+import aoc from './aoc.mjs';
+
+const part1expected = 'NYI';
+const part2expected = 'NYI';
+
+const parse = (data) => {
+  return data;
+};
+
+const part1 = (data) => {
+  return 'NYI';
+};
+
+const part2 = (data) => {
+  return 'NYI';
+};
+
+aoc(${YEAR}, ${1}, part1, part1expected, part2, part2expected, parse);
 EOF
