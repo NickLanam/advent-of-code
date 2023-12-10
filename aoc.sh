@@ -27,8 +27,12 @@ adventOfCode() {
       exit 3
     fi
 
-    if [[ (! -f "day${1}.mjs") || (! -f "input/day${1}.txt") || ( $(wasTooEarly "input/day${1}.txt") -eq 0 ) ]]; then
+    if [[ (! -f "day${1}.mjs") || (! -f "input/day${1}.txt") || (! -s "input/day${1}.txt") || ( $(wasTooEarly "input/day${1}.txt") -eq 0 ) ]]; then
       ./prep.sh "$1"
+      if [[ $? -ne 0 ]]; then
+        exit 1
+      fi
+      echo
     fi
 
     node "day${1}.mjs";

@@ -43,7 +43,7 @@ export default function aoc(
 
   const p1s = p1func(getSample(), true);
   if (p1s !== p1expect) {
-    console.error(bold(red('✕  Test for star 1 failed!')));
+    console.error(bold(red(' ✕ Test for star 1 failed!')));
     console.error(`${bold(brightBlack('   Expected'))}:`, p1expect);
     console.error(`${bold(brightBlack('   Actual'))}:`, p1s);
   } else if (testOnly) {
@@ -54,7 +54,7 @@ export default function aoc(
 
   const p2s = p2func(getSample(), true);
   if (p2s !== p2expect) {
-    console.error(bold(red('✕  Test for star 2 failed!')));
+    console.error(bold(red(' ✕ Test for star 2 failed!')));
     console.error(`${bold(brightBlack('   Expected'))}:`, p2expect);
     console.error(`${bold(brightBlack('   Actual'))}:`, p2s);
   } else if (testOnly) {
@@ -72,7 +72,7 @@ function parse(raw, trimLines = true) {
 
   // Check that the input actually had contents, and that it wasn't downloaded too early
   if (lines.length === 0 || lines[0].startsWith("Please don't")) {
-    console.error(red('Sample is blank, or input is blank, or input was downloaded too early.'));
+    console.error(red(' ✕ Sample is blank, or input is blank, or input was downloaded too early.'));
     process.exit(1);
   }
   return lines;
