@@ -59,8 +59,6 @@ const parse = (data) => {
     c: 'S',
   });
 
-  // TODO: Third pass if needed: remove links that aren't bidirectional? Depends on what part 2 is.
-
   return { start: map.get(`${sx},${sy}`), map, w, h };
 };
 
@@ -89,13 +87,81 @@ const part1 = ({ start, map }) => {
   return farthest;
 };
 
-const part2 = ({ start, map, w, h }) => {
-  // TL;DR: Flood fill, squeezing between gaps; answer is nodes that can't be reached.
-  // - Pick the ring of dots outside of the original grid.
-  // - Start a flood fill that includes all of those, and works its way in.
-  // - It will not fill a node that's part of the main loop.
-  // - It WILL squeeze between pipes.
-  // - Answer is the number of dots that were NOT reachable this way!
+// The extra requirement for part 2 requires squeezing BETWEEN pipes.
+// To handle this, we stretch the grid in both directions and insert
+// the appropriate connections in between.
+//
+// To do this, stretch the map to twice its width and height,
+// stretching links as well. This will widen gaps from 0 to 1,
+// letting the flood fill later use them.
+function expandForSqueezing({ map, w, h }) {
+  const expanded = new Map();
+  for (let y = 0; y < h; y += 0.5) {
+    for (let x = 0; x < w; x += 0.5) {
+      const k = `${x},${y}`;
+      if (map.has(k)) {
+        const oldLinks = map.get(k).links;
+        expanded.set(k, {
+          ...map.get(k),
+          // Connect to the fake links to make pathing below easier to handle
+          links: [
+            ...oldLinks,
+            x >= 0 && oldLinks.some(([tx, ty]) => tx === x - 1 && ty === y) && [x - 0.5, y],
+            y >= 0 && oldLinks.some(([tx, ty]) => tx === x && ty === y - 1) && [x, y - 0.5],
+            x < w - 1 && oldLinks.some(([tx, ty]) => tx === x + 1 && ty === y) && [x + 0.5, y],
+            y < h - 1 && oldLinks.some(([tx, ty]) => tx === x && ty === y + 1) && [x, y + 0.5],
+          ].filter(p => p)
+        });
+      } else if (Math.floor(x) !== x && Math.floor(y) !== y) {
+        expanded.set(k, { x, y, links: [], c: ' ', isFake: true });
+      } else if (Math.floor(x) !== x) {
+        expanded.set(k, {
+          x, y,
+          links: [
+            [x - 0.5, y],
+            [x + 0.5, y],
+          ].filter(([lx, ly]) => {
+            const lk = `${lx},${ly}`;
+            const node = map.get(lk);
+            if (!node) return false; // Probably out of range, not likely an error
+            return node.links.some(([tx, ty]) => [x - 0.5, x + 0.5].includes(tx) && ty === y);
+          }),
+          c: ' ',
+          isFake: true,
+        });
+      } else if (Math.floor(y) !== y) {
+        expanded.set(k, {
+          x, y,
+          links: [
+            [x, y - 0.5],
+            [x, y + 0.5],
+          ].filter(([lx, ly]) => {
+            const lk = `${lx},${ly}`;
+            const node = map.get(lk);
+            if (!node) return false; // Probably out of range, not likely an error
+            return node.links.some(([tx, ty]) => tx === x && [y - 0.5, y + 0.5].includes(ty));
+          }),
+          c: ' ',
+          isFake: true,
+        });
+      } else {
+        throw new Error(`Should not be possible: even coords ${k} missing from original map!`);
+      }
+    }
+  }
+  return expanded;
+}
+
+// TL;DR: Flood fill, squeezing between gaps; answer is #nodes that can't be reached.
+// - Stretch the grid out and extend links, for the squeezing requirement.
+// - Flood fill, starting at a ring outside of boundaries.
+// - Flood will affect any node that is NOT part of the loop containing S.
+// - Answer is the number of dots in the original map that the flood doesn't find.
+const part2 = ({ start, map: original, w, h }) => {
+
+  // Before we begin, we need to stretch the map out in both directions
+  // so that flood-filling can squeeze between the gaps without a border crossing algorithm.
+  const map = expandForSqueezing({ map: original, w, h });
 
   // First step: remove any links that aren't connected to the loop containing S.
   // We do this because we want to "touch" every dot that isn't enclosed by that loop.
@@ -116,16 +182,6 @@ const part2 = ({ start, map, w, h }) => {
     mainLoopUnexplored.push(...next);
   }
 
-  // TODO: THERE'S ONE MISSING REQUIREMENT TO HANDLE
-  // THE FLOOD FILL IS SUPOSSED TO BE ABLE TO SQUEEZE BETWEEN PIPES
-  // TO DO THAT, MY IDEA IS THUS:
-  // - Make a new map with extra points at all of the x.5, y.5 positions
-  // - Each of them is only a dot if none of their x.0, y.0 neighbors cross over it
-  // - Use this special map to do the flood filling
-  // - Final answer still only looks for dots in the original map though
-  // - Have to do this in two passes: stretch along x, then along y
-  // - Only the x.5 lines and y.5 lines, NOT the intersections between them? How to traverse?
-
   // Flood fill to find all dots that aren't enclosed by the main loop.
   // Yet another BFS, but totally different innards.
   const explored = new Set();
@@ -136,10 +192,10 @@ const part2 = ({ start, map, w, h }) => {
     if (explored.has(uk)) continue;
     explored.add(uk);
     for (const [nx, ny] of [
-      [ux - 1, uy],
-      [ux + 1, uy],
-      [ux, uy - 1],
-      [ux, uy + 1],
+      [ux - 0.5, uy],
+      [ux + 0.5, uy],
+      [ux, uy - 0.5],
+      [ux, uy + 0.5],
     ]) {
       // Don't look past the outer ring
       const nk = `${nx},${ny}`;
@@ -151,11 +207,8 @@ const part2 = ({ start, map, w, h }) => {
     }
   }
 
-  console.log("Should be able to produce an answer now", {onMainLoop: mainLoopExplored.size, total: [...map.keys()].length, reachableExcludingRing: explored.size - w - w - h - h - 4 });
-
   // Finally: count how many dots (in the unmodified map) were not found by the flood fill
-  // Currently gets 711, too high
-  return [...map.keys()].filter(k => !explored.has(k) && !mainLoopExplored.has(k)).length;
+  return [...original.keys()].filter(k => !explored.has(k) && !mainLoopExplored.has(k)).length;
 };
 
 aoc(2023, 10, part1, part1expected, part2, part2expected, parse);
