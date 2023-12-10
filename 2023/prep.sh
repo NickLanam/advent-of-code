@@ -25,7 +25,7 @@ import aoc from './aoc.mjs';
 const part1expected = 'NYI';
 const part2expected = 'NYI';
 
-const parse = (data) => {
+const parse = (data, part) => {
   return data;
 };
 

@@ -38,10 +38,10 @@ export default function aoc(
   const process = typeof parseFunc === 'function' ? parseFunc : x => x;
 
   // Re-invoke on each test to guarantee each test gets unmodified input
-  const getSample = () => process(load(day, true, trimLines));
-  const getInput = () => process(load(day, false, trimLines));
+  const getSample = (part) => process(load(day, true, trimLines), part);
+  const getInput = (part) => process(load(day, false, trimLines), part);
 
-  const p1s = p1func(getSample(), true);
+  const p1s = p1func(getSample(1), true);
   if (p1s !== p1expect) {
     console.error(bold(red(' ✕ Test for star 1 failed!')));
     console.error(`${bold(brightBlack('   Expected'))}:`, p1expect);
@@ -49,10 +49,10 @@ export default function aoc(
   } else if (testOnly) {
     console.log(`${bold(green('✓'))}  Test for star 1 passed.`);
   } else {
-    console.log(` ${bold(brightYellow('★'))} Star 1:`, p1func(getInput(), false));
+    console.log(` ${bold(brightYellow('★'))} Star 1:`, p1func(getInput(1), false));
   }
 
-  const p2s = p2func(getSample(), true);
+  const p2s = p2func(getSample(2), true);
   if (p2s !== p2expect) {
     console.error(bold(red(' ✕ Test for star 2 failed!')));
     console.error(`${bold(brightBlack('   Expected'))}:`, p2expect);
@@ -60,7 +60,7 @@ export default function aoc(
   } else if (testOnly) {
     console.log(`${bold(green('✓'))}  Test for star 2 passed.`);
   } else {
-    console.log(` ${bold(brightYellow('★'))} Star 2:`, p2func(getInput(), false));
+    console.log(` ${bold(brightYellow('★'))} Star 2:`, p2func(getInput(2), false));
   }
 }
 
