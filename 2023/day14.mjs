@@ -102,22 +102,19 @@ const part2 = (columns) => {
   seenStates.set(columns.map(c => c.join('')).join(';'), 0);
   const cycleToState = new Map([[...seenStates.entries()][0].reverse()]);
 
-  let loopFound = false;
   for (let cycle = 1; cycle <= 1_000_000_000; cycle++) {
     spinCycle();
-    if (!loopFound) {
-      const state = columns.map(c => c.join('')).join(';');
-      if (seenStates.has(state)) {
-        loopFound = true;
-        const jumpBy = cycle - seenStates.get(state);
-        cycle += Math.floor((1_000_000_000 - cycle) / jumpBy) * jumpBy;
-        const finalState = cycleToState.get(seenStates.get(state) + (1_000_000_000 - cycle));
-        const finalCols = finalState.split(';').map(col => col.split(''));
-        return score(finalCols);
-      } else {
-        seenStates.set(state, cycle);
-        cycleToState.set(cycle, state);
-      }
+
+    const state = columns.map(c => c.join('')).join(';');
+    if (seenStates.has(state)) {
+      const jumpBy = cycle - seenStates.get(state);
+      cycle += Math.floor((1_000_000_000 - cycle) / jumpBy) * jumpBy;
+      const finalState = cycleToState.get(seenStates.get(state) + (1_000_000_000 - cycle));
+      const finalCols = finalState.split(';').map(col => col.split(''));
+      return score(finalCols);
+    } else {
+      seenStates.set(state, cycle);
+      cycleToState.set(cycle, state);
     }
   }
   throw new Error('Failed to find a loop!');
