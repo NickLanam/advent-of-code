@@ -56,31 +56,25 @@ const solve = (charGrid, entryPoint) => {
   // Tracking this separately cost less than counting non-empty sets at the end
   const energizedCoords = new Set();
 
-  let beams = [entryPoint];
-  while (true) {
-    let hasChanges = false;
-    const newBeams = [];
-    for (const beam of beams) {
-      const [x, y] = beam;
-      if (x >= 0 && x < charGrid[0].length && y >= 0 && y < charGrid.length) {
-        // Storing a number is 300ms faster on part2 than doing `${x},${y}`!
-        energizedCoords.add(x * 10_000 + y);
-      }
-      const followed = followBeam(beam, charGrid);
-      for (const f of followed) {
-        // const [x, y, dir] = f; // Destructuring costs 100ms on part2!
-        const inMap = grid[f[1]]?.[f[0]] ?? null;
-        if (inMap) {
-          if (!inMap.has(f[2])) {
-            hasChanges = true;
-            inMap.add(f[2]);
-            newBeams.push(f);
-          }
+  const beams = [entryPoint];
+  while (beams.length) {
+    const beam = beams.pop();
+    const [x, y] = beam;
+    if (x >= 0 && x < charGrid[0].length && y >= 0 && y < charGrid.length) {
+      // Storing a number is 300ms faster on part2 than doing `${x},${y}`!
+      energizedCoords.add(x * 10_000 + y);
+    }
+    const followed = followBeam(beam, charGrid);
+    for (const f of followed) {
+      // const [x, y, dir] = f; // Destructuring costs 100ms on part2!
+      const inMap = grid[f[1]]?.[f[0]] ?? null;
+      if (inMap) {
+        if (!inMap.has(f[2])) {
+          inMap.add(f[2]);
+          beams.push(f);
         }
       }
     }
-    beams = newBeams;
-    if (!hasChanges) break;
   }
 
   return energizedCoords.size;
@@ -89,7 +83,7 @@ const solve = (charGrid, entryPoint) => {
 // Start off-screen because 0,0 is a reflector in the real input
 const part1 = (charGrid) => solve(charGrid, [-1, 0, 'r']);
 
-// TODO: This still takes nearly a second on my input.
+// TODO: This still takes about 650 milliseconds on my input.
 // I can make solve() even faster, but can I avoid trying every entry point?
 // Could memoize the energized set of every (coordinate, beam) pair
 // to avoid recalculating across or within solves, but that may be slower?
