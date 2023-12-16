@@ -39,39 +39,30 @@ const FOLLOW_MAP = new Map([
   ])],
 ]);
 
-const followBeam = ([px, py, odir], grid) => {
-  const x = px + xDir.get(odir);
-  const y = py + yDir.get(odir);
-  
-  const char = grid[y]?.[x];
-  if (!char) return [];
-
-  const outDirs = FOLLOW_MAP.get(odir).get(char);
-  return outDirs.map((dir) => ([x, y, dir]));
-};
-
 const solve = (charGrid, entryPoint) => {
   const grid = charGrid.map((row) => row.map(() => new Set()));
 
-  // Tracking this separately cost less than counting non-empty sets at the end
+  // Tracking this separately is faster than counting non-empty sets at the end
   const energizedCoords = new Set();
 
   const beams = [entryPoint];
   while (beams.length) {
-    const beam = beams.pop();
-    const [x, y] = beam;
+    const [x, y, dir] = beams.pop();
     if (x >= 0 && x < charGrid[0].length && y >= 0 && y < charGrid.length) {
       // Storing a number is 300ms faster on part2 than doing `${x},${y}`!
-      energizedCoords.add(x * 10_000 + y);
+      energizedCoords.add(x * 1_000 + y);
     }
-    const followed = followBeam(beam, charGrid);
-    for (const f of followed) {
-      // const [x, y, dir] = f; // Destructuring costs 100ms on part2!
-      const inMap = grid[f[1]]?.[f[0]] ?? null;
-      if (inMap) {
-        if (!inMap.has(f[2])) {
-          inMap.add(f[2]);
-          beams.push(f);
+    const fx = x + xDir.get(dir);
+    const fy = y + yDir.get(dir);
+    const fc = charGrid[fy]?.[fx];
+    if (fc) {
+      for (const ndir of FOLLOW_MAP.get(dir).get(fc)) {
+        const stored = grid[fy]?.[fx] ?? null;
+        if (stored) {
+          if (!stored.has(ndir)) {
+            stored.add(ndir);
+            beams.push([fx, fy, ndir]);
+          }
         }
       }
     }
@@ -83,10 +74,8 @@ const solve = (charGrid, entryPoint) => {
 // Start off-screen because 0,0 is a reflector in the real input
 const part1 = (charGrid) => solve(charGrid, [-1, 0, 'r']);
 
-// TODO: This still takes about 650 milliseconds on my input.
-// I can make solve() even faster, but can I avoid trying every entry point?
-// Could memoize the energized set of every (coordinate, beam) pair
-// to avoid recalculating across or within solves, but that may be slower?
+// TODO: This still takes about 550 milliseconds on my input.
+// Would memoizing the energized set per (coord, dir) pair be faster?
 const part2 = (charGrid) => {
   let best = -Infinity;
   for (let x = 0; x < charGrid[0].length; x++) {
