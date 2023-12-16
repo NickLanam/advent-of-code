@@ -31,7 +31,7 @@ const FOLLOW_RES = [
 const solve = (charGrid, entryPoint) => {
   // Each cell is an array of seen directions out of that cell.
   // It was a Set(), but that's slower than an array with so few elements.
-  const grid = charGrid.map((row) => row.map(() => []));
+  const grid = charGrid.map((row) => row.map(() => [false, false, false, false]));
 
   // Tracking this separately is faster than counting non-empty sets at the end
   // Since this can have thousands of elements, it IS faster than an array.
@@ -51,8 +51,8 @@ const solve = (charGrid, entryPoint) => {
       for (const ndir of FOLLOW_RES[dir][fc]) {
         const stored = grid[fy]?.[fx];
         if (stored) {
-          if (!stored.includes(ndir)) {
-            stored.push(ndir);
+          if (!stored[ndir]) {
+            stored[ndir] = true;
             beams.push([fx, fy, ndir]);
           }
         }
@@ -66,7 +66,7 @@ const solve = (charGrid, entryPoint) => {
 // Start off-screen because 0,0 is a reflector in the real input
 const part1 = (charGrid) => solve(charGrid, [-1, 0, RIGHT]);
 
-// TODO: This still takes on average 350 milliseconds on my input.
+// TODO: This still takes on average 300 milliseconds on my input.
 // Would memoizing the energized set per (coord, dir) pair be faster?
 const part2 = (charGrid) => {
   const w = charGrid[0].length;
