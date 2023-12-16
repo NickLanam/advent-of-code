@@ -3,14 +3,14 @@ import aoc from './aoc.mjs';
 const part1expected = 46;
 const part2expected = 51;
 
-const parse = (data, part) => {
-  return data.map(l => l.split(''));
-};
+const parse = lines => lines.map(l => l.split(''));
 
+const xDir = new Map([['u', 0], ['r', 1], ['d', 0], ['l', -1]]);
+const yDir = new Map([['u', -1], ['r', 0], ['d', 1], ['l', 0]]);
 const followBeam = ({ x, y, dir }, grid) => {
   const out = [];
-  const dx = {'u': 0, 'r': 1, 'd': 0, 'l': -1, '.': 0 }[dir];
-  const dy = {'u': -1, 'r': 0, 'd': 1, 'l': 0, '.': 0 }[dir];
+  const dx = xDir.get(dir);
+  const dy = yDir.get(dir);
 
   const char = grid[y + dy]?.[x + dx] ?? null;
   switch (char) {
@@ -74,12 +74,7 @@ const followBeam = ({ x, y, dir }, grid) => {
 };
 
 const solve = (charGrid, entryPoint) => {
-  const grid = new Map();
-  for (let y = 0; y < charGrid.length; y++) {
-    for (let x = 0; x < charGrid[0].length; x++) {
-      grid.set(`${x},${y}`, { x, y, dirs: new Set() });
-    }
-  }
+  const grid = charGrid.map((row, y) => row.map((char, x) => ({ x, y, char, dirs: new Set() })));
   const energizedCoords = new Set(); // To simplify answering later
 
   let beams = [entryPoint];
@@ -93,15 +88,11 @@ const solve = (charGrid, entryPoint) => {
       const followed = followBeam(beam, charGrid);
       for (const f of followed) {
         const { x, y, dir } = f;
-        // TODO: This is pretty slow for part 2 brute forcing (3.4sec total runtime for both parts).
-        // Making the map faster to work with would help a lot.
-        // So would not brute forcing in part 2, but hey, sub-5-second solve is still decent.
-        const inMap = grid.get(`${x},${y}`);
+        const inMap = grid[y]?.[x] ?? null;
         if (inMap) {
           if (!inMap.dirs.has(dir)) {
             hasChanges = true;
             inMap.dirs.add(dir);
-            grid.set(`${x},${y}`, inMap);
             newBeams.push(f);
           }
         }
@@ -117,6 +108,8 @@ const solve = (charGrid, entryPoint) => {
 // Start off-screen because 0,0 is a reflector in the real input
 const part1 = (grid) => solve(grid, { x: -1, y: 0, dir: 'r' });
 
+// TODO: This eats up over a second of runtime, by brute forcing all options.
+// There is likely a clever optimization to get under 100ms.
 const part2 = (grid) => {
   let best = -Infinity;
   for (let x = 0; x < grid[0].length; x++) {
