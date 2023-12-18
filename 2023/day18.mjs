@@ -1,83 +1,45 @@
 import aoc from './aoc.mjs';
-import { bold, grey } from './utils/color.mjs';
 
 const part1expected = 62;
 const part2expected = 952_408_144_115;
 
 const DIR = { 'U': [0, -1], 'R': [1, 0], 'D': [0, 1], 'L': [-1, 0] };
-const parse = (data) => {
+const parse = (data, part) => {
   return data.map(line => {
     let [, dir, count, color] = line.match(/([RDLU]) (\d+) \(#([0-9abcdef]{6})\)/);
-    return { dir: DIR[dir], count: +count, color };
+    if (part === 1) {
+      return { dir: DIR[dir], count: +count };
+    } else {
+      count = parseInt(color.substring(0, 5), 16);
+      dir = ['R', 'D', 'L', 'U'][+color.substring(5)];
+      return { dir: DIR[dir], count: +count };
+    }
   });
 };
 
-const part1 = (instructions) => {
-  const dug = new Set(); // (`${x},${y}`) -> means it was dug
-  dug.add(0);
-  let loc = [0, 0];
-  let minX = 0;
-  let minY = 0;
-  let maxX = 0;
-  let maxY = 0;
-  // TODO:
-  // Part 2 numbers are huge - like, "this approach will run out of memory" huge.
+/**
+ * An implementation of the Shoelace algorithm.
+ * See: https://www.101computing.net/the-shoelace-algorithm/
+ *
+ * @param {{ dir: [dx: number, dy: number], count: number }[]} instructions 
+ * @returns 
+ */
+const solve = (instructions) => {
+  let prevRow;
+  let prevCol;
+  let row = 0;
+  let col = 0;
+  let colDiff = 0;
+  let rowDiff = 0;
   for (const { dir: [dx, dy], count } of instructions) {
-    for (let c = 1; c <= count; c++) {
-      const x = loc[0] + (c * dx);
-      const y = loc[1] + (c * dy);
-      dug.add(`${x},${y}`);
-      minX = Math.min(minX, x);
-      maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y);
-      maxY = Math.max(maxY, y);
-    }
-    loc[0] += dx * count;
-    loc[1] += dy * count;
+    prevRow = row;
+    prevCol = col;
+    row += dx * count;
+    col += dy * count;
+    colDiff += prevCol * row - col * prevRow;
+    rowDiff += count;
   }
-
-  // DEBUGGING: Print the grid as if we bothered to convert it (we didn't lol)
-  // for (let y = minY - 1; y <= maxY + 1; y++) {
-  //   let line = [];
-  //   for (let x = minX - 1; x <= maxX + 1; x++) {
-  //     const item = dug.has(`${x},${y}`);
-  //     line.push(item ? '#' : '.');
-  //   }
-  //   console.log(line.join(''));
-  // }
-
-  // Flood fill like day 10, counting how many things we DON'T reach
-  const w = maxX - minX + 1;
-  const h = maxY - minY + 1;
-  const explored = new Set();
-  const unexplored = [[minX - 1, minY - 1]];
-  while (unexplored.length) {
-    const [ux, uy] = unexplored.shift();
-    const uk = `${ux},${uy}`;
-    if (explored.has(uk)) continue;
-    explored.add(uk);
-    for (const [nx, ny] of [
-      [ux - 1, uy],
-      [ux + 1, uy],
-      [ux, uy - 1],
-      [ux, uy + 1],
-    ]) {
-      // Don't look past the outer ring
-      const nk = `${nx},${ny}`;
-      const outOfBounds = (nx < minX - 1 || nx > maxX + 1 || ny < minY - 1 || ny > maxY + 1);
-      const seen = explored.has(nk);
-      const blocked = dug.has(nk);
-      if (!outOfBounds && !seen && !blocked) {
-        unexplored.push([nx, ny]);
-      }
-    }
-  }
-
-  return (w + 2) * (h + 2) - explored.size;
+  return Math.abs(colDiff / 2) + (rowDiff / 2) + 1;
 };
 
-const part2 = (data) => {
-  return 'NYI';
-};
-
-aoc(2023, 18, part1, part1expected, part2, part2expected, parse);
+aoc(2023, 18, solve, part1expected, solve, part2expected, parse);
