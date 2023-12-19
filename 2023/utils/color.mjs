@@ -58,6 +58,7 @@ export const m = (string, mod) => ansi(string, modNameToAnsiCode(mod));
 export const reset = (string) => ansi(string);
 
 export const bold = (string) => m(string, 'bold');
+export const dim = (string) => m(string, 'dim');
 export const italic = (string) => m(string, 'italic');
 export const underline = (string) => m(string, 'underline');
 

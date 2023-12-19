@@ -2,11 +2,25 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
-import { bold, green, red, brightBlack, brightYellow } from './utils/color.mjs';
+import { bold, dim, green, red, brightBlack, brightYellow, grey } from './utils/color.mjs';
 
 // __dirname isn't available in ES modules, but it can still be determined.
 // This would do strange things under Yarn PnP and other similar systems.
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function formatDuration(ms) {
+  if (ms < 1) {
+    return ` ${String(Math.round(ms * 1000)).padStart(3, ' ')}${dim(green('µs'))}`;
+  } else if (ms <= 99) {
+    return `${ms.toFixed(1).padStart(4, ' ')}${grey('ms')}`;
+  } else if (ms < 1_000) {
+    return ` ${Math.round(ms)}${grey('ms')}`;
+  } else if (ms < 10_000) {
+    return `${(ms / 1_000).toFixed(1).padStart(3, ' ')}${red('sec')}`;
+  } else {
+    return `${Math.round(ms / 1_000)}${red(' seconds')}`;
+  }
+}
 
 /**
  * Set up and run an Advent of Code challenge.
@@ -35,33 +49,50 @@ export default function aoc(
   testOnly = false,
 ) {
   console.log(`🎄 ${bold('Advent of Code')} ${bold(green(year))}, Day ${bold(green(day))} 🎄`);
-  const process = typeof parseFunc === 'function' ? parseFunc : x => x;
+  const parser = typeof parseFunc === 'function' ? parseFunc : x => x;
 
-  // Re-invoke on each test to guarantee each test gets unmodified input
-  const getSample = (part) => process(load(day, true, trimLines), part);
-  const getInput = (part) => process(load(day, false, trimLines), part);
+  const runPart = (part, isSample) => {
+    const solver = part === 1 ? p1func : p2func;
+    const expect = part === 1 ? p1expect : p2expect;
 
-  const p1s = p1func(getSample(1), true);
-  if (p1s !== p1expect) {
-    console.error(bold(red(' ✕ Test for star 1 failed!')));
-    console.error(`${bold(brightBlack('   Expected'))}:`, p1expect);
-    console.error(`${bold(brightBlack('   Actual'))}:`, p1s);
-  } else if (testOnly) {
-    console.log(`${bold(green('✓'))}  Test for star 1 passed.`);
-  } else {
-    console.log(` ${bold(brightYellow('★'))} Star 1:`, p1func(getInput(1), false));
-  }
+    const rawInput = load(day, isSample, trimLines);
 
-  const p2s = p2func(getSample(2), true);
-  if (p2s !== p2expect) {
-    console.error(bold(red(' ✕ Test for star 2 failed!')));
-    console.error(`${bold(brightBlack('   Expected'))}:`, p2expect);
-    console.error(`${bold(brightBlack('   Actual'))}:`, p2s);
-  } else if (testOnly) {
-    console.log(`${bold(green('✓'))}  Test for star 2 passed.`);
-  } else {
-    console.log(` ${bold(brightYellow('★'))} Star 2:`, p2func(getInput(2), false));
-  }
+    const parseStart = performance.now();
+    const parsedInput = parser(rawInput, part);
+    const parseEnd = performance.now();
+    const parseTime = parseEnd - parseStart;
+
+    const solveStart = performance.now();
+    const result = solver(parsedInput);
+    const solveEnd = performance.now();
+    const solveTime = solveEnd - solveStart;
+
+    const timeStr = `${grey('(Parse ')}${formatDuration(parseTime)}${grey(', Solve ')}${formatDuration(solveTime)}${grey(')')}`;
+
+    if (isSample) {
+      if (result !== expect) {
+        console.error(bold(red(` ✕ Test for star ${part} failed!`)));
+        console.error(`${bold(brightBlack('   Expected'))}:`, expect);
+        console.error(`${bold(brightBlack('   Actual'))}:`, result);
+        return { pass: false };
+      } else if (testOnly) {
+        console.info(`${bold(green('✓'))}  Test for star ${part} passed.`);
+      }
+      return { pass: true, parseTime, solveTime };
+    } else {
+      console.log(` ${bold(brightYellow('★'))} Star ${part} ${timeStr}:`, result);
+      return { pass: true, parseTime, solveTime };
+    }
+  };
+
+  const runStart = performance.now();
+
+  const p1TestOut = runPart(1, true);
+  if (p1TestOut.pass && !testOnly) runPart(1, false);
+  const p2TestOut = runPart(2, true);
+  if (p2TestOut.pass && !testOnly) runPart(2, false);
+
+  console.debug(`${bold(grey('⌛ Total: '))}${formatDuration(performance.now() - runStart)}`);
 }
 
 function parse(raw, trimLines = true) {
