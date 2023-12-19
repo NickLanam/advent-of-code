@@ -79,6 +79,6 @@ function parse(raw, trimLines = true) {
 }
 
 function load(day, sample = false, trimLines = true) {
-  const raw = readFileSync(`${__dirname}/input/day${day}${sample ? '.sample' : ''}.txt`);
+  const raw = readFileSync(`${__dirname}/input/day${String(day).padStart(2, '0')}${sample ? '.sample' : ''}.txt`);
   return parse(raw, trimLines);
 }

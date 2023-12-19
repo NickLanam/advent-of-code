@@ -1,7 +1,7 @@
 #!/bin/bash
 
 wasTooEarly() {
-  grep -q "Please don't repeatedly request" "$1"
+  grep -q "Please don't repeatedly request" "$1" 2>/dev/null
   echo $?
 }
 
@@ -27,15 +27,34 @@ adventOfCode() {
       exit 3
     fi
 
-    if [[ (! -f "day${1}.mjs") || (! -f "input/day${1}.txt") || (! -s "input/day${1}.txt") || ( $(wasTooEarly "input/day${1}.txt") -eq 0 ) ]]; then
-      ./prep.sh "$1"
+    # In 2023, I started 0-padding the day number so that GitHub would sort properly.
+    # So, need to detect if I'm using the new way or the old way here.
+    local DAY="$1"
+    local PADDED_DAY="$(printf "%02d" "$DAY")"
+
+    if [[ \
+      ( (! -f "day${DAY}.mjs") && (! -f "day${PADDED_DAY}.mjs") ) \
+      || ( \
+         ( (! -f "input/day${DAY}.txt") || (! -s "input/day${DAY}.txt") ) \
+         && ( (! -f "input/day${PADDED_DAY}.txt") || (! -s "input/day${PADDED_DAY}.txt") ) \
+      ) \
+      || ( \
+        ( $(wasTooEarly "input/day${DAY}.txt") -eq 0 ) \
+        && ( $(wasTooEarly "input/day${PADDED_DAY}.txt") -eq 0 ) 
+      )
+    ]]; then
+      ./prep.sh "$DAY"
       if [[ $? -ne 0 ]]; then
         exit 1
       fi
       echo
     fi
 
-    node "day${1}.mjs";
+    if [ -s "day${PADDED_DAY}.mjs" ]; then
+      node "day${PADDED_DAY}.mjs"
+    else
+      node "day${DAY}.mjs"
+    fi
 }
 
 adventOfCode $@
