@@ -24,22 +24,52 @@ else
   awk '{printf "%s\n", l $0; l=RT}' > "$CODE_FILE" << EOF
 import aoc from './aoc.mjs';
 
+/** @typedef {string[]} ParsedInput */
+/** @typedef {number|'NYI'} Part1Solution */
+/** @typedef {number|'NYI'} Part2Solution */
+
+/** @type Part1Solution */
 const part1expected = 'NYI';
+
+/** @type Part2Solution */
 const part2expected = 'NYI';
 
-const parse = (data, part) => {
-  return data;
+/**
+ * @param {string[]} lines Unparsed input lines
+ * @param {1|2} forPart Which star we're working on
+ * @returns {ParsedInput}
+ */
+const parse = (lines, forPart) => {
+  return lines;
 };
 
-const part1 = (data) => {
+/**
+ * 
+ * @param {ParsedInput} parsed 
+ * @returns {Part1Solution}
+ */
+const part1 = (parsed) => {
   return 'NYI';
 };
 
-const part2 = (data) => {
+/**
+ * 
+ * @param {ParsedInput} parsed 
+ * @returns {Part2Solution}
+ */
+const part2 = (parsed) => {
   return 'NYI';
 };
 
-aoc(${YEAR}, ${DAY}, part1, part1expected, part2, part2expected, parse);
+aoc({
+  year: ${YEAR},
+  day: ${DAY},
+  part1,
+  part1expected,
+  part2,
+  part2expected,
+  parse,
+});
 EOF
   echo -e " \e[32m✓\e[0m \e[0;4mday${DAY}.mjs\e[0m \e[32mcreated.\e[0m" >&2
 fi
