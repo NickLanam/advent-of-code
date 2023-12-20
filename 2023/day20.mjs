@@ -5,7 +5,7 @@ const part2expected = 'N/A'; // The sample doesn't have an rx module attached
 
 /** @typedef {'lo'|'hi'} PulseType */
 /** @typedef {'broadcaster'|'flipflop'|'conjunction'|'sink'} ModuleType */
-/** @typedef {{ type: ModuleType, id: string, outs: string[], lastState: boolean, lastIns: Map<string, boolean> }} Module */
+/** @typedef {{ type: ModuleType, id: string, outs: string[], lastState: string, lastIns: Map<string, boolean> }} Module */
 
 /**
  * @param {string[]} data
@@ -95,6 +95,8 @@ function applySignal(modules, target, pulseType, source) {
     case 'conjunction':
       module.lastIns.set(source, pulseType);
       const toSend = [...module.lastIns.values()].every(v => v === 'hi') ? 'lo' : 'hi';
+      module.lastState = toSend;
+      // if (target === 'dh' && modules.get(target).lastState === 'hi' && module.lastState === modules.get(target).lastState) console.log('dh should have just emitted hi');
       for (const out of module.outs) {
         next.set(out, toSend);
       }
@@ -112,15 +114,16 @@ function applySignal(modules, target, pulseType, source) {
 /**
  * @param {Map<string,Module>} modules 
  */
-function buttonPress(modules) {
+function buttonPress(modules, watchThese = []) {
   let countLoSent = 0;
   let countHiSent = 0;
-  let didRxGetLo = false; // Shawty
+  const cyclesFound = watchThese.reduce((a, c) => ({ ...a, [c]: false }), {});
   let stack = [{ send: 'lo', to: 'broadcaster', from: 'button' }];
   while (stack.length > 0) {
-    // console.log('Process...', stack[0]);
     const { send, to, from } = stack.shift(); // Shift because rules ask for BFS explicitly
-    if (to === 'rx' && send  === 'lo') didRxGetLo = true;
+    if (watchThese.includes(from) && send === 'hi') {
+      cyclesFound[from] = true;
+    }
     if (send === 'lo') countLoSent++;
     if (send === 'hi') countHiSent++;
     const next = applySignal(modules, to, send, from);
@@ -128,7 +131,7 @@ function buttonPress(modules) {
       stack.push({ send: nextSend, to: nextTo, from: to });
     }
   }
-  return { countLoSent, countHiSent, didRxGetLo };
+  return { countLoSent, countHiSent, cyclesFound };
 }
 
 const part1 = (modules) => {
@@ -142,23 +145,60 @@ const part1 = (modules) => {
   return totalLoSent * totalHiSent;
 };
 
+// We're using these exactly the same way as we did in day 8, and for the same reason.
+// There are cycles we need to detect, and then the answer is the lcm of their lengths.
+const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+const lcm = (a, b) => a / gcd(a, b) * b;
+const lcmAll = (...all) => all.reduce(lcm, 1);
+
+/**
+ * The problem description doesn't say it, but the input does.
+ * Part 2 of this problem is exactly the same thing as day 8:
+ * - We have a network of actions that can cycle
+ * - There are several subnetworks, disconnected from each other
+ * - We're waiting for their cycle lengths to align
+ * - The answer is the lowest common multiple of their cycle lengths
+ * 
+ * As such, after a little bit of setup to find the subnetworks,
+ * we just do the same thing we did in day 8 part 2.
+ * 
+ * Specifics:
+ * - The rx module has only one input, which is a conjunction module.
+ * - That conjunction module has exactly four inputs, each themselves a conjunction.
+ * - Those four are all part of independent subnetworks, and they cycle after a given number of button presses.
+ * - So, find those four conjunctions, start pressing the button until we find all of their cycle lengths.
+ * - Once we know how long each one takes to flip hi, take the lcm of those lengths and return it.
+ *
+ * @param {Map<string, Module>} modules 
+ * @param {boolean} isSample 
+ * @returns {number}
+ */
 const part2 = (modules, isSample) => {
-  // TODO: This does not complete in a reasonable time frame.
-  // Looking at my input, it turns out there's a reason the example didn't have an example result:
-  // - The rx module output to by only one other module, which is a conjunction
-  // - That conjunction has exactly four inputs
-  // - Those inputs all have their own, fully independent sub-networks it would seem
-  // - So, the trick is to figure out how long each one of those takes to flip to hi,
-  //   then take the lcm of those lengths (manually checked, at least one of those loops is clean with no offset)
-  //   and return that (because when they all go hi at once, rx gets a lo signal).
-  // - Don't get an off-by-one with this!
-  // - And then find out if this is the same discovery everyone else made! Probably is.
-  if (isSample) return 'N/A'; // The sample doesn't have an rx module attached
-  for (let i = 1; i <= 1_000_000_000_000; i++) {
-    const { didRxGetLo } = buttonPress(modules);
-    if (didRxGetLo) return i;
+  // The sample doesn't have the same properties that make part 2 a puzzle.
+  if (isSample) return 'N/A';
+
+  // First, find the subnetworks that feed into rx.
+  let rxParent = [...modules.keys()].find(k => modules.get(k).outs.includes('rx'));
+  const networkLeaves = [...modules.keys()].filter(k => modules.get(k).outs.includes(rxParent));
+  const loopCheck = networkLeaves.reduce((a, id) => ({ ...a,  [id]: { found: false, at: Infinity } }), {});
+
+  // Sanity: the loops should all be found pretty quickly.
+  for (let i = 1; i <= 100_000_000_000; i++) {
+    const { cyclesFound } = buttonPress(modules, networkLeaves, i);
+    for (const k of networkLeaves) {
+      if (cyclesFound[k]) {
+        if (!loopCheck[k].found) {
+          loopCheck[k].found = true;
+          loopCheck[k].at = i;
+        }
+      }
+    }
+    if (networkLeaves.every(k => loopCheck[k].found)) {
+      return lcmAll(...networkLeaves.map(k => loopCheck[k].at));
+    }
   }
-  throw new Error('Module rx never got a lo signal after a trillion button presses. Something is wrong.');
+
+  throw new Error('Module rx never got a lo signal after 100 billion button presses. Something is wrong.');
 };
 
 aoc(2023, 20, part1, part1expected, part2, part2expected, parse);

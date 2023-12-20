@@ -63,7 +63,7 @@ export default function aoc(
     const parseTime = parseEnd - parseStart;
 
     const solveStart = performance.now();
-    const result = solver(parsedInput);
+    const result = solver(parsedInput, isSample);
     const solveEnd = performance.now();
     const solveTime = solveEnd - solveStart;
 
