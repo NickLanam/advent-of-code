@@ -2,20 +2,20 @@ import aoc from './aoc.mjs';
 
 /** @typedef {{ w: number, h: number, grid: ('.'|'#')[], start: [x: number, y: number] }} ParsedInput */
 /** @typedef {number} Part1Solution */
-/** @typedef {number|'NYI'} Part2Solution */
+/** @typedef {number|'N/A'} Part2Solution */
 
 /** @type Part1Solution */
 const part1expected = 16; // With 6 steps
 
 /** @type Part2Solution */
-const part2expected = 16_733_044; // With 5_000 steps
+const part2expected = 'N/A'; // The sample has a different set of properties than the real input.
 
 /**
  * @param {string[]} lines Unparsed input lines
  * @param {1|2} forPart Which star we're working on
  * @returns {ParsedInput}
  */
-const parse = (lines, forPart) => {
+const parse = (lines) => {
   let start = [-1, -1];
   const h = lines.length;
   const w = lines[0].length;
@@ -31,63 +31,76 @@ const parse = (lines, forPart) => {
 };
 
 /**
- * 
+ * Figure out how many locations can be reached with the given number of steps in one subgrid
+ *
  * @param {ParsedInput} parsed 
- * @param {boolean} isSample
- * @returns {Part1Solution}
+ * @param {number} requiredSteps
+ * @returns {number}
  */
-const part1 = ({ w, h, grid, start }, isSample) => {
-  const REQUIRED_STEPS = isSample ? 6 : 64;
+const solveOneGrid = ({ w, h, grid, start}, requiredSteps) => {
+  const sk = start[0] * 1_000 + start[1];
 
-  const getNeighbors = (x, y) => [
-    [x - 1, y],
-    [x + 1, y],
-    [x, y - 1],
-    [x, y + 1],
-  ].filter(([x2, y2]) => x2 >= 0 && x2 < w && y2 >= 0 && y2 < h && grid[y2][x2] !== '#');
+  // TODO: Do I actually need to even keep track of parity this way? Probably not?
+  // My original part 1 solution didn't need to, but was always an even step count...
+  const reachableEven = new Set();
+  const reachableOdd = new Set();
+  reachableEven.add(sk);
+  reachableOdd.add(sk);
 
-  const coordKey = ([x, y]) => x * 1_000 + y;
-
-  const reachable = new Set();
-  reachable.add(coordKey(start));
-  
   const seen = new Set();
 
   let exploreStack = [{ x: start[0], y: start[1], stepsTaken: 0 }];
 
   while (exploreStack.length > 0) {
     const { x, y, stepsTaken } = exploreStack.shift();
-    const k = coordKey([x, y]);
+    const k = x * 1_000 + y;
 
     if (seen.has(k)) continue;
     seen.add(k);
 
-    if ((REQUIRED_STEPS - stepsTaken) % 2 === 0 && stepsTaken <= REQUIRED_STEPS) {
-      reachable.add(k);
+    if (stepsTaken <= requiredSteps) {
+      const isEven = stepsTaken % 2 === 0;
+      if (isEven) {
+        reachableEven.add(k);
+      } else {
+        reachableOdd.add(k);
+      }
     }
-    if (stepsTaken >= REQUIRED_STEPS) continue;
-    for (const [nx, ny] of getNeighbors(x, y)) {
-      if (!reachable.has(coordKey([nx, ny]))) {
+    if (stepsTaken >= requiredSteps) continue;
+
+    const possibleNeighbors = [
+      [x - 1, y],
+      [x + 1, y],
+      [x, y - 1],
+      [x, y + 1],
+    ];
+
+    for (const [nx, ny] of possibleNeighbors) {
+      if (nx < 0 || nx >= w || ny < 0 || ny >= h || grid[ny][nx] === '#') {
+        continue;
+      }
+
+      const nk = nx * 1_000 + ny;
+      if (!reachableEven.has(nk) && !reachableOdd.has(nk)) {
         exploreStack.push({ x: nx, y: ny, stepsTaken: stepsTaken + 1 });
       }
     }
   }
 
-  // DEBUGGING ONLY
-  // This is how I found a bug in my traversal logic that only happened on the real input
-  if (false) {
-    console.log({ w, h, start });
-    for (let y = 0; y < h; y++) {
-      let line = '';
-      for (let x = 0; x < w; x++) {
-        const char = reachable.has(coordKey([x, y])) ? 'O' : grid[y][x];
-        line += (start[0] === x && start[1] === y) ? `\u001b[1;32m${char}\u001b[0m` : char;
-      }
-      console.log(line);
-    }
-  }
+  return {
+    reachableEven: reachableEven.size,
+    reachableOdd: reachableOdd.size - 1, // Parity
+  };
+};
 
-  return reachable.size;
+/**
+ * 
+ * @param {ParsedInput} parsed 
+ * @param {boolean} isSample
+ * @returns {Part1Solution}
+ */
+const part1 = ({ w, h, grid, start }, isSample) => {
+  return solveOneGrid({ w, h, grid, start }, isSample ? 6 : 64).reachableEven;
 };
 
 /**
@@ -97,51 +110,71 @@ const part1 = ({ w, h, grid, start }, isSample) => {
  * @returns {Part2Solution}
  */
 const part2 = ({ w, h, grid, start }, isSample) => {
-  const REQUIRED_STEPS = isSample ? 5_000 : 26501365;
+  if (isSample) {
+    // The real input has a property that the sample doesn't:
+    // The center row and column are clear (no obstacles),
+    // which allows for a lot of the simplifications below to work.
+    // Without that property, a more convoluted solution would be needed.
+    return 'N/A';
+  }
 
-  const getNeighbors = (x, y) => [
-    [x - 1, y],
-    [x + 1, y],
-    [x, y - 1],
-    [x, y + 1],
-  ].filter(([x2, y2]) => x2 >= 0 && x2 < w && y2 >= 0 && y2 < h && grid[y2][x2] !== '#');
-
-  const coordKey = ([x, y]) => x * 1_000 + y;
-
-  const reachable = new Set();
-  reachable.add(coordKey(start));
+  const {
+    reachableEven: centerReachableEven,
+    reachableOdd: centerReachableOdd,
+  } = solveOneGrid({ w, h, grid, start }, Infinity);
   
-  const seen = new Set();
+  const requiredSteps = 26_501_365;
 
-  let exploreStack = [{ x: start[0], y: start[1], stepsTaken: 0 }];
+  // Kind of like a radius, but the shape grows in a diamond, not a circle.
+  // The logic of the puzzle is the same either way, though.
+  const cardinalTileReach = Math.floor(requiredSteps / h);
 
-  // TODO: The grid is now infinitely tiled on both axes.
-  // There will absolutely be a Set max size reached if I do this the same naive way.
-  // As with the last few days, the optimization will probably be to find the pattern,
-  // and not actually simulate the entire process but instead to multiply a result.
+  const cardinalStepLimit = (requiredSteps - start[0] - 1) % h;
+  const lowerDiagStepLimit = (requiredSteps - start[0] - start[1] - h - 2) % (w + h);
+  const upperDiagStepLimit = (requiredSteps - start[0] - start[1] - 2) % (w + h);
 
-  // My guess: figure out which edges (and with how many remaining steps) can be exited from the center start,
-  // and make a copy of the map that enters from there (with that many remaining steps) and does the same.
-  // Memoize results, if there's a simplification that allows hash overlap anyway.
-  // Like days 5 and 20, that should be enough to simulate only far enough to find the cycle then do lcm or similar.
-
-  while (exploreStack.length > 0) {
-    const { x, y, stepsTaken } = exploreStack.shift();
-    const k = coordKey([x, y]);
-
-    if (seen.has(k)) continue;
-    seen.add(k);
-
-    if ((REQUIRED_STEPS - stepsTaken) % 2 === 0 && stepsTaken <= REQUIRED_STEPS) {
-      reachable.add(k);
-    }
-    if (stepsTaken >= REQUIRED_STEPS) continue;
-    for (const [nx, ny] of getNeighbors(x, y)) {
-      if (!reachable.has(coordKey([nx, ny]))) {
-        exploreStack.push({ x: nx, y: ny, stepsTaken: stepsTaken + 1 });
-      }
+  let numOddTiles = 1;
+  let numEvenTiles = 0;
+  for (let tile = 0; tile < cardinalTileReach; tile++) {
+    if (tile % 2 === 1) {
+      numEvenTiles += tile * 4;
+    } else {
+      numOddTiles += tile * 4;
     }
   }
+
+  const fullGridSum = (numOddTiles * centerReachableOdd) + (numEvenTiles * centerReachableEven);
+
+  let cardinalSum = 0;
+  for (const cardinalStart of [
+    [start[0], 0], // North
+    [w - 1, start[1]], // East
+    [start[0], h - 1], // South
+    [0, start[1]], // West
+  ]) {
+    const { reachableEven, reachableOdd } = solveOneGrid({ w, h, grid, start: cardinalStart }, cardinalStepLimit);
+    cardinalSum += (cardinalStepLimit % 2 === 0 ? reachableEven : reachableOdd);
+  }
+
+  let diagonalSum = 0;
+  for (const diagStart of [
+    [0, 0], // Northwest
+    [w - 1, 0], // Northeast
+    [w - 1, h - 1], // Southeast
+    [0, h - 1], // Southwest
+  ]) {
+    const loLim = solveOneGrid({ w, h, grid, start: diagStart }, lowerDiagStepLimit);
+    const hiLim = solveOneGrid({ w, h, grid, start: diagStart }, upperDiagStepLimit);
+    if (lowerDiagStepLimit % 2 === 0) {
+      diagonalSum += loLim.reachableEven * cardinalTileReach;
+      diagonalSum += hiLim.reachableOdd * (cardinalTileReach - 1);
+    } else {
+      diagonalSum += loLim.reachableOdd * cardinalTileReach;
+      diagonalSum += hiLim.reachableEven * (cardinalTileReach - 1);
+    }
+  }
+
+  return fullGridSum + cardinalSum + diagonalSum;
 };
 
 aoc({
