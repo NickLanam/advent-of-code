@@ -25,17 +25,19 @@ const parse = (lines, forPart) => {
  * @returns {Part1Solution}
  */
 const part1 = (reports) => {
-  return reports.map((levels) => {
-    let dir = Math.sign(levels[1] - levels[0]);
-    for (let i = 0; i < levels.length - 1; i++) {
-      const l = levels[i];
-      const n = levels[i + 1];
-      if (Math.sign(n - l) !== dir || Math.abs(n - l) === 0 || Math.abs(n - l) > 3) {
-        return false;
+  let numValid = 0;
+  reportLoop: for (const report of reports) {
+    const dir = Math.sign(report[1] - report[0]);
+    for (let i = 0; i < report.length - 1; i++) {
+      const l = report[i];
+      const n = report[i + 1];
+      if (Math.sign(n - l) !== dir || n === l || Math.abs(n - l) > 3) {
+        continue reportLoop;
       }
     }
-    return true;
-  }).reduce((a, c) => a + !!c, 0);
+    numValid++;
+  }
+  return numValid;
 };
 
 /**
