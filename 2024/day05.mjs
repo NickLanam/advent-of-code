@@ -1,8 +1,8 @@
 import aoc from './aoc.mjs';
 
-/** @typedef {{splitters: number[][], updaters: number[]}} ParsedInput */
-/** @typedef {number|'NYI'} Part1Solution */
-/** @typedef {number|'NYI'} Part2Solution */
+/** @typedef {{rules: Record<number, number[]>, updates: number[][], meetsRules: (pages: number[]) => boolean}} ParsedInput */
+/** @typedef {number} Part1Solution */
+/** @typedef {number} Part2Solution */
 
 /** @type Part1Solution */
 const part1expected = 143;
@@ -12,14 +12,23 @@ const part2expected = 123;
 
 /**
  * @param {string[]} lines Unparsed input lines
- * @param {1|2} forPart Which star we're working on
  * @returns {ParsedInput}
  */
-const parse = (lines, forPart) => {
+const parse = (lines) => {
   const splitAt = lines.indexOf('');
   const splitters = lines.slice(0, splitAt).map(l => l.split('|').map(n => +n));
-  const updaters = lines.slice(splitAt + 1).map(l => l.split(',').map(n => +n));
-  return { splitters, updaters };
+  const updates = lines.slice(splitAt + 1).map(l => l.split(',').map(n => +n));
+
+  const rules = splitters.reduce((acc, [a, b]) => ({
+    ...acc, [a]: [...(acc[a] ?? []), b]
+  }), {});
+
+  const meetsRules = (pages) => pages.every((p, i) => {
+    const before = pages.slice(0, i);
+    return before.every(bb => !rules[p]?.includes(bb));
+  });
+  
+  return { rules, updates, meetsRules };
 };
 
 /**
@@ -27,13 +36,8 @@ const parse = (lines, forPart) => {
  * @param {ParsedInput} parsed 
  * @returns {Part1Solution}
  */
-const part1 = ({ splitters, updaters }) => {
-  const rules = splitters.reduce((acc, [a, b]) => ({ ...acc, [a]: [...(acc[a] ?? []), b]}), {});
-  const meetsRules = (pages) => pages.every((p, i) => {
-    const before = pages.slice(0, i);
-    return before.every(bb => !rules[p]?.includes(bb));
-  });
-  return updaters
+const part1 = ({ updates, meetsRules }) => {
+  return updates
     .filter(u => meetsRules(u))
     .map(u => u[Math.floor(u.length / 2)])
     .reduce((a, c) => a + c, 0);
@@ -44,13 +48,8 @@ const part1 = ({ splitters, updaters }) => {
  * @param {ParsedInput} parsed 
  * @returns {Part2Solution}
  */
-const part2 = ({ splitters, updaters }) => {
-  const rules = splitters.reduce((acc, [a, b]) => ({ ...acc, [a]: [...(acc[a] ?? []), b]}), {});
-  const meetsRules = (pages) => pages.every((p, i) => {
-    const before = pages.slice(0, i);
-    return before.every(bb => !rules[p]?.includes(bb));
-  });
-  return updaters
+const part2 = ({ rules, updates, meetsRules }) => {
+  return updates
     .filter(u => !meetsRules(u))
     .map(u => {
       const out = [...u];
