@@ -1,7 +1,7 @@
 import aoc from './aoc.mjs';
 import { neighbors } from './data-structures/grid2d.mjs';
 
-/** @typedef {{ w: number, h: number, gx: number, gy: number, obstacles: Set<string> }} ParsedInput */
+/** @typedef {{ w: number, h: number, gx: number, gy: number, obstacles: Set<number> }} ParsedInput */
 /** @typedef {number} Part1Solution */
 /** @typedef {number} Part2Solution */
 
@@ -27,21 +27,19 @@ const parse = (lines) => {
         gx = x;
         gy = y;
       } else if (line[x] === '#') {
-        obstacles.add(`${x},${y}`);
+        obstacles.add(x * 1_000 + y);
       }
     }
   }
   return { w, h, obstacles, gx, gy };
 };
 
-const rotMap = { 'N': 'E', 'E': 'S', 'S': 'W', 'W': 'N' };
-
 function move(x, y, dir) {
   switch(dir) {
-    case 'N': return [x, y - 1];
-    case 'E': return [x + 1, y];
-    case 'S': return [x, y + 1];
-    case 'W': return [x - 1, y];
+    case 0 /* N */: return [x, y - 1];
+    case 1 /* E */: return [x + 1, y];
+    case 2 /* S */: return [x, y + 1];
+    case 3 /* W */: return [x - 1, y];
   }
 }
 
@@ -50,10 +48,10 @@ function runSim({ w, h, obstacles, gx, gy }, ox = -2, oy = -2) {
   const visited = new Set();
   let ggx = gx;
   let ggy = gy;
-  let gd = 'N';
+  let gd = 0; // North
   while (ggx >= 0 && ggx < w && ggy >= 0 && ggy < h) {
-    const visitKey = `${ggx},${ggy}`;
-    const loopKey = `${visitKey}@${gd}`;
+    const visitKey = ggx * 1_000 + ggy;
+    const loopKey = visitKey * 10 + gd;
     visited.add(visitKey);
     if (unique.has(loopKey)) {
       return { reason: 'loop', nodes: NaN };
@@ -61,8 +59,8 @@ function runSim({ w, h, obstacles, gx, gy }, ox = -2, oy = -2) {
       unique.add(loopKey);
     }
     const [nx, ny] = move(ggx, ggy, gd);
-    if ((nx === ox && ny === oy) || obstacles.has(`${nx},${ny}`)) {
-      gd = rotMap[gd];
+    if ((nx === ox && ny === oy) || obstacles.has(nx * 1_000 + ny)) {
+      gd = (gd + 1) % 4;
     } else {
       ggx = nx;
       ggy = ny;
@@ -89,7 +87,8 @@ const part2 = (parsed, isSample) => {
   const { gx, gy } = parsed;
   let validSpots = new Set();
   for (const key of runSim(parsed).nodes) {
-    const [ox, oy] = key.split(',').map(n => +n);
+    const oy = key % 1_000;
+    const ox = Math.floor(key / 1_000);
     if (ox === gx && oy === gy) {
       continue;
     }
