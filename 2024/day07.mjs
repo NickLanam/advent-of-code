@@ -23,23 +23,19 @@ const parse = (lines) => {
 
 function solve(parsed, numOps) {
   return parsed.map(({expected, inputs}) => {
-    const bits = inputs.length - 1;
-    for (let i = 0; i < numOps**bits; i++) {
-      // TODO: There's a massive speedup to be had by memoizing sub-solutions (dynamic programming).
-      //  Do that before day 8 opens up, to refresh my memory on the best Advent-of-Code-friendly approach.
-      const combo = i.toString(numOps).padStart(bits, '0').split('').map(d => ['+', '*', '.'][+d]);
-      let result = inputs[0];
-      for (let j = 0; j < combo.length; j++) {
-        switch (combo[j]) {
-          case '+': result += inputs[j + 1]; break;
-          case '*': result *= inputs[j + 1]; break;
-          case '.': result = Number(String(result) + String(inputs[j + 1])); break;
-          default: throw new Error('How? ' + combo[j]);
+    let stack = [inputs[0]];
+    for (let layer = 1; layer <= inputs.length; layer++) {
+      const next = [];
+      for (const v of stack) {
+        if (v === expected) return expected;
+        if (v > expected) continue;
+        if (layer < inputs.length) {
+          next.push(v + inputs[layer]);
+          next.push(v * inputs[layer]);
+          if (numOps > 2) next.push(Number(String(v) + String(inputs[layer])));
         }
       }
-      if (result === expected) {
-        return expected;
-      }
+      stack = next;
     }
     return 0;
   }).reduce((a, c) => a + c, 0);
