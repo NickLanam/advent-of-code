@@ -32,7 +32,7 @@ function solve(parsed, numOps) {
         if (layer < inputs.length) {
           next.push(v + inputs[layer]);
           next.push(v * inputs[layer]);
-          if (numOps > 2) next.push(Number(String(v) + String(inputs[layer])));
+          if (numOps === 3) next.push(v * 10**String(inputs[layer]).length + inputs[layer]);
         }
       }
       stack = next;
