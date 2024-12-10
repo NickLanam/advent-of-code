@@ -3,15 +3,15 @@
 /** @typedef {CardinanDirection | IntercardinalDirection} Direction */
 
 /**
- * Given a 2d array of strings and an x,y coordinate,
+ * Given a 2d array of values and an x,y coordinate,
  * return an array of { x, y, v, dir } objects that exist
  * in neighboring positions.
  * 
- * @param {string[][]} grid 
+ * @param {T[][]} grid 
  * @param {number} x 
  * @param {number} y 
  * @param {boolean} includeDiagonals
- * @returns {{ x: number, y: number, v: string, dir: Direction }[]}
+ * @returns {{ x: number, y: number, v: T, dir: Direction }[]}
  */
 export function neighbors(grid, x, y, includeDiagonals = true) {
   const w = grid[0].length;
