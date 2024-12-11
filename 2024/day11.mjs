@@ -23,7 +23,7 @@ const parse = (lines) => {
  * @param {number} rock 
  * @returns {number[]}
  */
-const step = (rock) {
+const step = (rock) => {
   if (rock === 0) return [1];
   const s = String(rock);
   if (s.length % 2 === 0) {
