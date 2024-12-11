@@ -11,10 +11,6 @@ PADDED_DAY="$(printf "%02d" "$DAY")"
 
 CODE_FILE="${BASE}/day${PADDED_DAY}.mjs"
 
-UNLOCK_TS=$(TZ=UTC0 date -d "${YEAR}-12-${PADDED_DAY}T05:00:00Z" +%s)
-NOW_TS=$(TZ=UTC0 date +%s)
-REMAIN_SEC=$(( $UNLOCK_TS - $NOW_TS ))
-
 echo -e "🔧 \e[90mSetup:\e[0m \e[0;1mAdvent of Code \e[0m\e[32;1m${YEAR}\e[0m, Day \e[32;1m${DAY}\e[0m, in \e[0;4m${BASE}\e[0m 🔧"
 
 # Create the solution file if it doesn't already exist
@@ -78,12 +74,26 @@ fi
 touch "${BASE}/input/day${PADDED_DAY}.sample.txt"
 touch "${BASE}/input/day${PADDED_DAY}.txt"
 
-if [[ $REMAIN_SEC -ge 0 ]]; then
-  REMAIN_STRING=$(date -u -d "0 $UNLOCK_TS seconds - $NOW_TS seconds" +"%H:%M:%S")
-  echo -e " \e[31m✕\e[0m Puzzle unlocks in \e[31m${REMAIN_STRING}\e[0m."
-  echo -e "   Sleeping until puzzle unlocks."
-  sleep $REMAIN_SEC
-fi
+waitForInput() {
+  local UNLOCK_TS=$(TZ=UTC0 date -d "${YEAR}-12-${PADDED_DAY}T05:00:00Z" +%s)
+  local NOW_TS=$(TZ=UTC0 date +%s)
+  local REMAIN_SEC=$(( $UNLOCK_TS - $NOW_TS ))
+  local REMAIN_STRING=$(date -u -d "0 $UNLOCK_TS seconds - $NOW_TS seconds" +"%H:%M:%S")
+  if [[ $REMAIN_SEC -ge 0 ]]; then
+    echo -e " \e[31m✕\e[0m Waiting until puzzle unlocks in \e[31m${REMAIN_STRING}\e[0m."
+    while [[ $REMAIN_SEC -ge 0 ]]; do
+      sleep 1
+      NOW_TS=$(TZ=UTC0 date +%s)
+      REMAIN_SEC=$(( $UNLOCK_TS - $NOW_TS ))
+      REMAIN_STRING=$(date -u -d "0 $UNLOCK_TS seconds - $NOW_TS seconds" +"%H:%M:%S")
+      echo -en "\e[1A\e[K"
+      echo -e " \e[31m✕\e[0m Waiting until puzzle unlocks in \e[31m${REMAIN_STRING}\e[0m."
+    done
+    # Clear the wait line to make way for the normal one when we're done
+    echo -en "\e[1A\e[K"
+  fi
+}
+waitForInput
 
 echo -e " • Puzzle is \e[32mavailable\e[0m! Downloading input."
 curl "https://adventofcode.com/${YEAR}/day/${DAY}/input" \
