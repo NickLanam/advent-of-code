@@ -81,12 +81,12 @@ touch "${BASE}/input/day${PADDED_DAY}.txt"
 if [[ $REMAIN_SEC -ge 0 ]]; then
   REMAIN_STRING=$(date -u -d "0 $UNLOCK_TS seconds - $NOW_TS seconds" +"%H:%M:%S")
   echo -e " \e[31m✕\e[0m Puzzle unlocks in \e[31m${REMAIN_STRING}\e[0m."
-  echo -e "   Please \e[0;1mwait\e[0m until then."
-  exit 1
-else
-  echo -e " • Puzzle is \e[32mavailable\e[0m! Downloading input."
-  curl "https://adventofcode.com/${YEAR}/day/${DAY}/input" \
-    --silent \
-    -H "Cookie: session=$(cat "${BASE}/input/cookie.txt")" \
-    -o "${BASE}/input/day${PADDED_DAY}.txt"
+  echo -e "   Sleeping until puzzle unlocks."
+  sleep $REMAIN_SEC
 fi
+
+echo -e " • Puzzle is \e[32mavailable\e[0m! Downloading input."
+curl "https://adventofcode.com/${YEAR}/day/${DAY}/input" \
+  --silent \
+  -H "Cookie: session=$(cat "${BASE}/input/cookie.txt")" \
+  -o "${BASE}/input/day${PADDED_DAY}.txt"
