@@ -56,9 +56,9 @@ function solve(groups) {
 aoc({
   year: 2024,
   day: 13,
-  part1: (g, isSample) => solve(g, true, isSample),
+  part1: solve,
   part1expected,
-  part2: (g, isSample) => solve(g, false, isSample),
+  part2: solve,
   part2expected,
   parse,
 });
