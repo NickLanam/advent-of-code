@@ -52,8 +52,6 @@ const parse = (lines, forPart) => {
   };
 };
 
-const rotLeftMap = { 'N': 'W', 'E': 'N', 'S': 'E', 'W': 'S' };
-const rotRightMap = { 'N': 'E', 'E': 'S', 'S': 'W', 'W': 'N' };
 function getMovesWithCost(w, h, x, y, dir, walls) {
   let forward;
   switch (dir) {
@@ -63,20 +61,37 @@ function getMovesWithCost(w, h, x, y, dir, walls) {
     case 'W': forward = { x: x - 1, y, dir, cost: 1 }; break;
     default: throw new Error('What direction is this? ' + dir);
   }
+  forward.key = coordDirKey(forward.x, forward.y, forward.dir);
 
-  const rotLeft = {
-    x, y, cost: 1_000,
-    dir: rotLeftMap[dir]
-  };
+  let left;
+  switch (dir) {
+    case 'N': left = { x: x - 1, y, dir: 'W', cost: 1_001 }; break;
+    case 'E': left = { x, y: y - 1, dir: 'N', cost: 1_001 }; break;
+    case 'S': left = { x: x + 1, y, dir: 'E', cost: 1_001 }; break;
+    case 'W': left = { x, y: y + 1, dir: 'S', cost: 1_001 }; break;
+  }
+  left.key = coordDirKey(left.x, left.y, left.dir);
+  
+  let right;
+  switch (dir) {
+    case 'N': right = { x: x + 1, y, dir: 'E', cost: 1_001 }; break;
+    case 'E': right = { x, y: y + 1, dir: 'S', cost: 1_001 }; break;
+    case 'S': right = { x: x - 1, y, dir: 'W', cost: 1_001 }; break;
+    case 'W': right = { x, y: y - 1, dir: 'N', cost: 1_001 }; break;
+  }
+  right.key = coordDirKey(right.x, right.y, right.dir);
 
-  const rotRight = {
-    x, y, cost: 1_000,
-    dir: rotRightMap[dir]
-  };
+  let reverse;
+  switch (dir) {
+    case 'N': reverse = { x, y: y + 1, dir: 'S', cost: 2_001 }; break;
+    case 'E': reverse = { x: x - 1, y, dir: 'W', cost: 2_001 }; break;
+    case 'S': reverse = { x, y: y - 1, dir: 'N', cost: 2_001 }; break;
+    case 'W': reverse = { x: x + 1, y, dir: 'E', cost: 2_001 }; break;
+  }
+  reverse.key = coordDirKey(reverse.x, reverse.y, reverse.dir);
 
-  return [forward, rotLeft, rotRight]
-    .filter(({ x, y }) => x >= 0 && x < w && y >= 0 && y < h && !walls.has(coordToKey(x, y)))
-    .map(move => ({ ...move, key: coordDirKey(move.x, move.y, move.dir) }));
+  return [forward, left, right, reverse]
+    .filter(({ x, y }) => x >= 0 && x < w && y >= 0 && y < h && !walls.has(coordToKey(x, y)));
 }
 
 function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
