@@ -103,34 +103,23 @@ function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
   dist.set(coordDirKey(startX, startY, 'E'), 0);
 
   let foundPath = false;
-  // const startTime = performance.now();
   while (numVisited < w * h * 4) {
-    if (numVisited % 100 === 0) {
-      // console.log(numVisited, performance.now() - startTime);
-    }
     const next = { x: -1, y: -1, cost: Infinity, key: -1, dir: null };
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        for (const dir of ['N', 'E', 'S', 'W']) {
-          const k = coordDirKey(x, y, dir);
-          if (visits.has(k)) continue;
-          if (dist.has(k) && dist.get(k) < next.cost) {
-            next.x = x;
-            next.y = y;
-            next.cost = dist.get(k);
-            next.dir = dir;
-            next.key = k;
-          }
-        }
+
+    for (const [k, cost] of dist) {
+      if (!visits.has(k) && cost < next.cost) {
+        const { x, y, dir } = fromCoordDirKey(k);
+        next.x = x;
+        next.y = y;
+        next.dir = dir;
+        next.cost = cost;
+        next.key = k;
       }
     }
+
     if (next.key < 0) throw new Error('Next did not get set');
     numVisited++;
     visits.add(next.key);
-    // This one seems to be about 0.6ms each run, which isn't great but isn't the problem either - the rest is waaaay more expensive
-    // if (numVisited % 100 === 0) {
-    //   console.log(numVisited, performance.now() - startTime);
-    // }
 
     const legalMoves = getMovesWithCost(w, h, next.x, next.y, next.dir, walls);
     if (!legalMoves.length) {
@@ -149,19 +138,12 @@ function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
       break;
     }
   }
-  // const endTime = performance.now();
-  // console.info('It took', (endTime - startTime) / numVisited, 'on average');
 
   if (!foundPath) {
     throw new Error('Failed to find a path to the goal after visiting all nodes!');
   }
 
-  // console.log(visits);
-  // console.log([...visits].map(v => fromCoordDirKey(v)));
-  // console.log(visits.has(coordDirKey(goalX, goalY, 'N'))); // False, uh-oh
-  // TODO: Getting Infinity back from the sample, need to add a ton of logs
-  const rets = ['N', 'E', 'S', 'W'].map(dir => dist.get(coordDirKey(goalX, goalY, dir))).filter(v => v != null);
-  return Math.min(...rets);
+  return { dist, prev };
 }
 
 /**
@@ -170,7 +152,9 @@ function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
  * @returns {Part1Solution}
  */
 const part1 = ({ w, h, walls, start, end }) => {
-  return dijkstra(w, h, walls, start, end);
+  const { dist } = dijkstra(w, h, walls, start, end);
+  const rets = ['N', 'E', 'S', 'W'].map(dir => dist.get(coordDirKey(end[0], end[1], dir))).filter(v => v != null);
+  return Math.min(...rets);
 };
 
 /**
