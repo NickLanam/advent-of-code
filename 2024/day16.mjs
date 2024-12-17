@@ -12,7 +12,6 @@ const part2expected = 64;
 
 const coordDirKeyDirMap = { 'N': 0.1, 'E': 0.2, 'S': 0.3, 'W': 0.4 };
 const coordToKey = (x, y) => x * 1_000 + y;
-const fromCoordKey = (k) => ({ x: Math.floor(k / 1_000), y: Math.floor(k % 1_000) });
 const coordDirKey = (x, y, dir) => x * 1_000 + y + coordDirKeyDirMap[dir];
 const fromCoordDirKey = (k) => ({
   x: Math.floor(k / 1_000),
@@ -41,7 +40,7 @@ const parse = (lines, forPart) => {
         case '#': { walls.add(coordToKey(x, y)); break; }
         case 'S': { start = [x, y]; break; }
         case 'E': { end = [x, y]; break; }
-        default: throw new Error('Bad char: ' + c);
+        default: break;
       }
     }
   }
@@ -94,7 +93,6 @@ function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
   const prev = new Map();
   dist.set(coordDirKey(startX, startY, 'E'), 0);
 
-  let foundPath = false;
   while (numVisited < w * h * 4) {
     const next = { x: -1, y: -1, cost: Infinity, key: -1, dir: null };
 
@@ -109,7 +107,6 @@ function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
       }
     }
 
-    if (next.key < 0) throw new Error('Next did not get set');
     numVisited++;
     visits.add(next.key);
 
@@ -123,13 +120,8 @@ function dijkstra(w, h, walls, [startX, startY], [goalX, goalY]) {
       }
     }
     if (next.x === goalX && next.y === goalY) {
-      foundPath = true;
       break;
     }
-  }
-
-  if (!foundPath) {
-    throw new Error('Failed to find a path to the goal after visiting all nodes!');
   }
 
   saved[w] = { dist, prev };
@@ -162,36 +154,7 @@ const part2 = ({ w, h, walls, start, end }) => {
   let seen = new Set();
   let seenDirectionless = new Set();
   const queue = keysAtCoord(...end);
-  /*
-  // console.info('Initial queue', queue);
-  while (queue.length > 0) {
-    const top = queue.pop();
-    const { x, y, dir } = fromCoordDirKey(top);
-    const n = Math.floor(top);
-    if (seen.has(top) && (x != end[0] || y != end[1])) {
-      // console.log('ALREADY SAW', { x, y });
-      continue;
-    }
-    seen.add(top);
-    seenDirectionless.add(n);
-    for (const k of keysAtCoord(x, y)) {
-      if (dist.has(k) && prev.has(k)) {
-        const p = prev.get(k);
-        const mc = moveCost(p.dir, dir);
-        const line = `${x},${y} \x1b[35m${dir}\x1b[0m \$${dist.get(k)} \x1b[90m←\x1b[0m ${p.x},${p.y} \x1b[35m${p.dir}\x1b[0m \$${p.cost} (${mc}, ${k}, ${p.key})`;
-        if (p.cost + mc === dist.get(k)) {
-          if (x === 3 && y < 7) console.log('\x1b[32m✔\x1b[0m', line);
-          queue.push(...keysAtCoord(p.x, p.y));
-        } else {
-          if (x === 3 && y < 7) console.log('\x1b[31m✖\x1b[0m', line);
-          //queue.push(coordDirKey(p.x, p.y, p.dir));
-        }
-      } else {
-        // console.log('MISS', { x, y, k });
-      }
-    }
-  }
-  */
+
   while(queue.length > 0) {
     const k = queue.pop();
     if (seen.has(k)) {
@@ -204,60 +167,11 @@ const part2 = ({ w, h, walls, start, end }) => {
     
     const d = dist.get(k);
     const p = prev.get(k);
-    console.info('First sighting', { k, d, p: p.key });
     for (const pk of keysAtCoord(p.x, p.y)) {
-      console.info('  ', {
-        d,
-        checkedD: (dist.get(pk) ?? Infinity) + moveCost(p.dir, fromCoordDirKey(pk).dir),
-        pk,
-        pkc: dist.get(pk),
-        pd: fromCoordDirKey(k).dir,
-        pkd: fromCoordDirKey(pk).dir,
-        mc: moveCost(fromCoordDirKey(k).dir, fromCoordDirKey(pk).dir),
-      });
       if ((dist.get(pk) ?? Infinity) + moveCost(fromCoordDirKey(k).dir, fromCoordDirKey(pk).dir) === d) {
         queue.push(pk);
       }
     }
-  }
-
-  // DEBUGGING: Why do I get 73 when there should have been 64?
-  for (let y = 0; y < h; y++) {
-    let line = '';
-    for (let x = 0; x < w; x++) {
-      const seenXY = seenDirectionless.has(coordToKey(x, y));
-      if (walls.has(coordToKey(x, y))) {
-        const connNorth = (walls.has(coordToKey(x, y - 1)) & 1) << 3;
-        const connSouth = (walls.has(coordToKey(x, y + 1)) & 1) << 2;
-        const connEast = (walls.has(coordToKey(x + 1, y)) & 1) << 1;
-        const connWest = (walls.has(coordToKey(x - 1, y)) & 1);
-        const conn = connNorth + connSouth + connEast + connWest;
-        const boxChar = {
-          0b0000: '⚬',
-          0b0001: '─', // '╴',
-          0b0010: '─', // '╶',
-          0b0011: '─',
-          0b0100: '│', //'╷',
-          0b0101: '┐',
-          0b0110: '┌',
-          0b0111: '┬',
-          0b1000: '│', // '╵',
-          0b1001: '┘',
-          0b1010: '└',
-          0b1011: '┴',
-          0b1100: '│',
-          0b1101: '┤',
-          0b1110: '├',
-          0b1111: '┼',
-        }[conn];
-        line += seenXY ? '\x1b[31m!\x1b[0m' : `\x1b[90m${boxChar}\x1b[0m`;
-      } else if (seenXY) {
-        line += '\x1b[32m⚬\x1b[0m';
-      } else {
-        line += '\x1b[90m·\x1b[0m';
-      }
-    }
-    console.log(line);
   }
 
   return seenDirectionless.size;
