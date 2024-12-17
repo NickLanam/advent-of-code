@@ -17,7 +17,7 @@ const coordDirKey = (x, y, dir) => x * 1_000 + y + coordDirKeyDirMap[dir];
 const fromCoordDirKey = (k) => ({
   x: Math.floor(k / 1_000),
   y: Math.floor(k % 1_000),
-  dir: ['N', 'E', 'S', 'W'][Math.round(((k % 1) * 10) - 1)]
+  dir: ['N', 'E', 'S', 'W'][Math.round(((k % 1) * 10)) - 1]
 });
 
 const parses = {};
@@ -162,6 +162,7 @@ const part2 = ({ w, h, walls, start, end }) => {
   let seen = new Set();
   let seenDirectionless = new Set();
   const queue = keysAtCoord(...end);
+  /*
   // console.info('Initial queue', queue);
   while (queue.length > 0) {
     const top = queue.pop();
@@ -189,7 +190,35 @@ const part2 = ({ w, h, walls, start, end }) => {
         // console.log('MISS', { x, y, k });
       }
     }
-
+  }
+  */
+  while(queue.length > 0) {
+    const k = queue.pop();
+    if (seen.has(k)) {
+      continue;
+    } else {
+      seen.add(k);
+      seenDirectionless.add(Math.floor(k));
+    }
+    if (!(dist.has(k) && prev.has(k))) continue;
+    
+    const d = dist.get(k);
+    const p = prev.get(k);
+    console.info('First sighting', { k, d, p: p.key });
+    for (const pk of keysAtCoord(p.x, p.y)) {
+      console.info('  ', {
+        d,
+        checkedD: (dist.get(pk) ?? Infinity) + moveCost(p.dir, fromCoordDirKey(pk).dir),
+        pk,
+        pkc: dist.get(pk),
+        pd: fromCoordDirKey(k).dir,
+        pkd: fromCoordDirKey(pk).dir,
+        mc: moveCost(fromCoordDirKey(k).dir, fromCoordDirKey(pk).dir),
+      });
+      if ((dist.get(pk) ?? Infinity) + moveCost(fromCoordDirKey(k).dir, fromCoordDirKey(pk).dir) === d) {
+        queue.push(pk);
+      }
+    }
   }
 
   // DEBUGGING: Why do I get 73 when there should have been 64?
