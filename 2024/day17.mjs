@@ -1,6 +1,6 @@
 import aoc from './aoc.mjs';
 
-/** @typedef {string[]} ParsedInput */
+/** @typedef {{ A: number, B: number, C: number, program: number[]}[]} ParsedInput */
 /** @typedef {string} Part1Solution */
 /** @typedef {number} Part2Solution */
 
@@ -23,7 +23,8 @@ const parse = (lines) => {
 };
 
 /**
- * 
+ * As the problem description requests: a trivial fake CPU.
+ *
  * @param {ParsedInput} parsed 
  * @returns {Part1Solution}
  */
@@ -75,12 +76,12 @@ const samplePart1 = ({ A, B, C, program, expect }) => {
         break;
       }
       case 6: { // bdv
-        B = Math.floor(A / (2**COMBO(arg)));
+        B = A >> COMBO(arg);
         pc += 2;
         break;
       }
       case 7: { // cdv
-        C = Math.floor(A / (2**COMBO(arg)));
+        C = A >> COMBO(arg);
         pc += 2;
         break;
       }
