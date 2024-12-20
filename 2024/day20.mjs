@@ -1,6 +1,6 @@
 import aoc from './aoc.mjs';
 
-/** @typedef {string[]} ParsedInput */
+/** @typedef {number[]} ParsedInput */
 /** @typedef {number} Part1Solution */
 /** @typedef {number} Part2Solution */
 
@@ -62,11 +62,7 @@ function findSavings(path, minSavings) {
   if (savedSavings[minSavings]) return savedSavings[minSavings];
   const closeSavings = new Map();
   const farSavings = new Map();
-  
-  // Next, for every point on the way, look for points further along that can be reached via a wall near the starting point.
-  // Cheats are uniquely keyed (per problem description) by where they were activated (on the path) and where they ended (also on the path).
-  // Notably, it's impossible for a cheat to jump less than 4 steps (moving and and out of a wall costs at least 2 steps itself).
-  // The savings can be as low as 2 in some scenarios though.
+
   for (let i = 0; i < path.length - minSavings - 2; i++) {
     const pk = path[i];
     const [px, py] = fromKey(pk);
