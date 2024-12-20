@@ -58,8 +58,8 @@ const parse = (lines) => {
 const CLOSE_DISTANCE = 2;
 const FAR_DISTANCE = 20;
 const savedSavings = {};
-function findSavings(path, h) {
-  if (savedSavings[h]) return savedSavings[h];
+function findSavings(path, minSavings) {
+  if (savedSavings[minSavings]) return savedSavings[minSavings];
   const closeSavings = new Map();
   const farSavings = new Map();
   
@@ -67,16 +67,12 @@ function findSavings(path, h) {
   // Cheats are uniquely keyed (per problem description) by where they were activated (on the path) and where they ended (also on the path).
   // Notably, it's impossible for a cheat to jump less than 4 steps (moving and and out of a wall costs at least 2 steps itself).
   // The savings can be as low as 2 in some scenarios though.
-  for (let i = 0; i < path.length - 4; i++) {
-    // Stores the exits we've already seen that start from this location
-    const knownCheats = new Set();
+  for (let i = 0; i < path.length - minSavings - 2; i++) {
     const pk = path[i];
     const [px, py] = fromKey(pk);
 
-    for (let j = i + 4; j < path.length; j++) {
+    for (let j = i + minSavings + 2; j < path.length; j++) {
       const jk = path[j];
-      if (knownCheats.has(jk)) continue;
-      knownCheats.add(jk); // Even if it's farther than the limit, we still don't want to do math on it again
       const expectedCost = j - i;
       const [jx, jy] = fromKey(jk);
       const cost = Math.abs(jx - px) + Math.abs(jy - py);
@@ -91,16 +87,16 @@ function findSavings(path, h) {
       }
     }
   }
-  savedSavings[h] = { closeSavings, farSavings };
-  return savedSavings[h];
+  savedSavings[minSavings] = { closeSavings, farSavings };
+  return savedSavings[minSavings];
 }
 
 function solve(path, forPart, isSample) {
-  const { closeSavings, farSavings } = findSavings(path, +isSample);
+  let minSavings = isSample ? [, 2, 50][forPart] : 100;
+  const { closeSavings, farSavings } = findSavings(path, minSavings);
   const which = forPart === 1 ? closeSavings : farSavings;
   
   let out = 0;
-  let minSavings = isSample ? [, 2, 50][forPart] : 100;
   for (const [k, v] of which) {
     if (k >= minSavings) {
       out += v;
