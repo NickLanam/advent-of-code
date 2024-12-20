@@ -1,151 +1,120 @@
 import aoc from './aoc.mjs';
 
 /** @typedef {string[]} ParsedInput */
-/** @typedef {number|'SKIP'} Part1Solution */
-/** @typedef {number|'NYI'} Part2Solution */
+/** @typedef {number} Part1Solution */
+/** @typedef {number} Part2Solution */
 
 /** @type Part1Solution */
-const part1expected = 'SKIP';
+const part1expected = 44;
 
 /** @type Part2Solution */
-const part2expected = 'NYI';
+const part2expected = 285;
 
 const toKey = (x, y) => x * 1_000 + y;
-const fromKey = (k) => ({ x: Math.floor(k / 1_000), y: k % 1_000 });
+const fromKey = (k) => [Math.floor(k / 1_000), k % 1_000];
+
+const savedParses = {};
 
 /**
  * @param {string[]} lines Unparsed input lines
- * @param {1|2} forPart Which star we're working on
  * @returns {ParsedInput}
  */
-const parse = (lines, forPart) => {
+const parse = (lines) => {
   const h = lines.length;
   const w = lines[0].length;
-  const walls = new Set();
+  if (savedParses[h]) return savedParses[h];
+
+  const points = new Set();
   let start;
   let end;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const v = lines[y][x];
       switch (v) {
-        case '#': walls.add(toKey(x, y)); break;
+        case '.': points.add(toKey(x, y)); break;
         case 'S': start = { x, y }; break;
         case 'E': end = { x, y }; break;
         default: break;
       }
     }
   }
-  return { w, h, walls, start, end };
-};
-
-function dijkstra(w, h, start, end, walls, ignoreWall) {
-  let numVisited = 0;
-  let visits = new Set();
-
-  const dist = new Map();
-  const prev = new Map();
-  dist.set(toKey(start.x, start.y), 0);
-
-  while (numVisited < w * h) {
-    const next = { x: -1, y: -1, cost: Infinity, key: -1 };
-    for (const [k, cost] of dist) {
-      if (!visits.has(k) && cost < next.cost) {
-        const { x, y } = fromKey(k);
-        next.x = x;
-        next.y = y;
-        next.cost = cost;
-        next.key = k;
-      }
-    }
-
-    numVisited++;
-    visits.add(next.key);
-
-    const neighbors = [
-      [next.x - 1, next.y],
-      [next.x, next.y - 1],
-      [next.x + 1, next.y],
-      [next.x, next.y + 1]
-    ].filter(([x2, y2]) => (
-      x2 >= 0 && x2 < w &&
-      y2 >= 0 && y2 < h &&
-      ((x2 === ignoreWall.x && y2 === ignoreWall.y) || !walls.has(toKey(x2, y2)))
-    ));
-    
-    for (const [nx, ny] of neighbors) {
+  let path = [toKey(start.x, start.y)];
+  let px = start.x;
+  let py = start.y;
+  while (px !== end.x || py !== end.y) {
+    for (const [nx, ny] of [[px - 1, py], [px, py - 1], [px + 1, py], [px, py + 1]]) {
       const nk = toKey(nx, ny);
-      if (visits.has(nk)) continue;
-      const c = dist.get(next.key) + 1;
-      if (!dist.has(nk) || c < dist.get(nk)) {
-        dist.set(nk, c);
-        prev.set(nk, toKey(next.x, next.y));
-      }
-    }
-    if (next.x === end.x && next.y === end.y) {
+      if ((!points.has(nk) && (nx !== end.x || ny !== end.y)) || path.includes(nk)) continue;
+      path.push(nk);
+      px = nx;
+      py = ny;
       break;
     }
   }
+  savedParses[h] = path;
+  return savedParses[h];
+};
 
-  const path = [];
-  let u = toKey(end.x, end.y);
-  if (prev.has(u) || u === toKey(start.x, start.y)) {
-    while (u) {
-      path.unshift(u);
-      u = prev.get(u);
-    }
-  }
-  return path;
-}
+const CLOSE_DISTANCE = 2;
+const FAR_DISTANCE = 20;
+const savedSavings = {};
+function findSavings(path, h) {
+  if (savedSavings[h]) return savedSavings[h];
+  const closeSavings = new Map();
+  const farSavings = new Map();
+  
+  // Next, for every point on the way, look for points further along that can be reached via a wall near the starting point.
+  // Cheats are uniquely keyed (per problem description) by where they were activated (on the path) and where they ended (also on the path).
+  // Notably, it's impossible for a cheat to jump less than 4 steps (moving and and out of a wall costs at least 2 steps itself).
+  // The savings can be as low as 2 in some scenarios though.
+  for (let i = 0; i < path.length - 4; i++) {
+    // Stores the exits we've already seen that start from this location
+    const knownCheats = new Set();
+    const pk = path[i];
+    const [px, py] = fromKey(pk);
 
-/**
- * 
- * @param {ParsedInput} parsed 
- * @returns {Part1Solution}
- */
-const part1 = ({ w, h, walls, start, end }, isSample) => {
-  const noCheatScore = (w * h) - walls.size;
-  const savingsCounts = { 0: 0 };
-
-  const noCheatPath = dijkstra(w, h, start, end, walls, { x: -1, y: -1 });
-  if (noCheatScore !== noCheatPath.length) {
-    throw new Error(`noCheatScore=${noCheatScore}, noCheatPath.length = ${noCheatPath.length}`);
-  }
-  for (let i = 0; i < noCheatPath.length; i++) {
-    const { x: px, y: py } = fromKey(noCheatPath[i]);
-    const nearWalls = [[px - 1, py], [px, py - 1], [px + 1, py], [px, py + 1]]
-      .filter(([x2, y2]) => x2 >= 0 && x2 < w && y2 >= 0 && y2 < h && walls.has(toKey(x2, y2)));
-    
-    for (const [wx, wy] of nearWalls) {
-      const nonWallNeighbors = [[wx - 1, wy], [wx, wy - 1], [wx + 1, wy], [wx, wy + 1]]
-      .filter(([x2, y2]) => x2 >= 0 && x2 < w && y2 >= 0 && y2 < h && !walls.has(toKey(x2, y2)));
-      for (const nwn of nonWallNeighbors) {
-        const j = noCheatPath.indexOf(toKey(...nwn));
-        const savings = j - i - 2;
-        if (savings > 0) {
-          savingsCounts[savings] = (savingsCounts[savings] ?? 0) + 1;
+    for (let j = i + 4; j < path.length; j++) {
+      const jk = path[j];
+      if (knownCheats.has(jk)) continue;
+      knownCheats.add(jk); // Even if it's farther than the limit, we still don't want to do math on it again
+      const expectedCost = j - i;
+      const [jx, jy] = fromKey(jk);
+      const cost = Math.abs(jx - px) + Math.abs(jy - py);
+      const savings = expectedCost - cost;
+      if (savings > 0) {
+        if (cost <= CLOSE_DISTANCE) {
+          closeSavings.set(savings, (closeSavings.get(savings) ?? 0) + 1);
+        }
+        if (cost <= FAR_DISTANCE) {
+          farSavings.set(savings, (farSavings.get(savings) ?? 0) + 1);
         }
       }
     }
   }
-  if (isSample) return 'SKIP';
-  return [...Object.entries(savingsCounts)].reduce((a, [s, c]) => a + (+s >= 100 ? c : 0), 0);
-};
+  savedSavings[h] = { closeSavings, farSavings };
+  return savedSavings[h];
+}
 
-/**
- * 
- * @param {ParsedInput} parsed 
- * @returns {Part2Solution}
- */
-const part2 = (parsed) => {
-  return 'NYI';
-};
+function solve(path, forPart, isSample) {
+  const { closeSavings, farSavings } = findSavings(path, +isSample);
+  const which = forPart === 1 ? closeSavings : farSavings;
+  
+  let out = 0;
+  let minSavings = isSample ? [, 2, 50][forPart] : 100;
+  for (const [k, v] of which) {
+    if (k >= minSavings) {
+      out += v;
+    }
+  }
+  return out;
+}
 
 aoc({
   year: 2024,
   day: 20,
-  part1,
+  part1: (parsed, isSample) => solve(parsed, 1, isSample),
   part1expected,
-  part2,
+  part2: (parsed, isSample) => solve(parsed, 2, isSample),
   part2expected,
   parse,
 });
