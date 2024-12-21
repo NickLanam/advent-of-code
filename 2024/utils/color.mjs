@@ -35,18 +35,31 @@ export function modNameToAnsiCode(modName) {
 }
 
 export function ansi(string, ...ansiCodes) {
-  const effective = ansiCodes.filter(c => (
+  const openers = ansiCodes.filter(c => (
     c > 0 &&
     (
       c <= 4 ||
-      (c >= 30 && c <= 37) ||
-      (c => 40 && c <= 47) ||
-      (c >= 90 && c <= 97) ||
+      (c >=  30 && c <=  37) ||
+      (c >=  40 && c <=  47) ||
+      (c >=  90 && c <=  97) ||
       (c >= 100 && c <= 107)
     )
   ));
-  if (effective.length) {
-    return `\u001b[${effective.join(';')}m${String(string).replace(/(\u001b\[0m)+$/, '')}\u001b[0m`;
+  const closers = openers.map(e => (
+    e === 1 ? 22
+    : e === 2 ? 22
+    : e === 3 ? 23
+    : e === 4 ? 24
+    : (e >= 30 && e <= 37) ? 39
+    : (e >= 40 && e <= 48) ? 49
+    : (e >= 90 && e <= 97) ? 39
+    : (e >= 100 && e <= 107) ? 49
+    : 0
+  ));
+  const lead = `\x1b[${openers.join(';')}m`;
+  const follow = `\x1b[${closers.join(';')}m`;
+  if (openers.length) {
+    return lead + String(string).replace(/(\x1b\[[\d+]m)+$/, '') + follow;
   }
   else return String(string);
 }

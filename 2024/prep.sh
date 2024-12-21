@@ -15,7 +15,7 @@ echo -e "🔧 \e[90mSetup:\e[0m \e[0;1mAdvent of Code \e[0m\e[32;1m${YEAR}\e[0m,
 
 # Create the solution file if it doesn't already exist
 if [[ -f "$CODE_FILE" ]]; then
-  echo -e " \e[32m✓\e[0m \e[0;4mday${PADDED_DAY}.mjs\e[0m \e[32malready exists.\e[0m" >&2
+  echo -e " \e[32m✓\e[0m \e[0;4mday${PADDED_DAY}.mjs\e[0m \e[32malready exists\e[0m." >&2
 else
   awk '{printf "%s\n", l $0; l=RT}' > "$CODE_FILE" << EOF
 import aoc from './aoc.mjs';

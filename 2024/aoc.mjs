@@ -89,7 +89,7 @@ function aocActual(
 
     if (isSample) {
       if (result !== expect) {
-        console.error(bold(red(` ✕ Test for star ${part} failed!`)));
+        console.error(bold(red(' ✕ ')) + `Test for star ${part} ${bold(red('failed!'))}`);
         console.error(`${bold(brightBlack('   Expected'))}:`, expect);
         console.error(`${bold(brightBlack('   Actual'))}:`, result);
         return { pass: false };
@@ -121,7 +121,7 @@ function parse(raw, trimLines = true) {
 
   // Check that the input actually had contents, and that it wasn't downloaded too early
   if (lines.length === 0 || lines[0].startsWith("Please don't")) {
-    console.error(red(' ✕ Sample is blank, or input is blank, or input was downloaded too early.'));
+    console.error(red(' ✕ ') + `Sample or input is ${red(bold('blank'))}, or input was downloaded ${red(bold('too early'))}.`);
     process.exit(1);
   }
   return lines;
