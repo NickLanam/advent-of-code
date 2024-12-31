@@ -17,7 +17,7 @@ adventOfCode() {
       exit 1
     fi
     local tot="$(git rev-parse --show-toplevel)"
-    cd "$tot"
+    cd "$tot/javascript"
 
     local year="$(date +"%Y")"
     cd "./$year" || exit 2
