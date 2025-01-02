@@ -1,0 +1,33 @@
+use advent_lib::runner::{run, PartId, RunDetails};
+
+type Part1Solution = u64;
+type Part2Solution = u64;
+
+#[derive(Debug)]
+struct Parsed {
+  lines: Vec<String>,
+}
+
+fn parse(lines: Vec<String>, _sample_name: Option<String>, _for_part: PartId) -> Parsed {
+  return Parsed { lines };
+}
+
+fn part1(parsed: Parsed, _sample_name: Option<String>) -> Part1Solution {
+  println!("{parsed:#?}");
+  return parsed.lines.len().try_into().unwrap();
+}
+
+fn part2(parsed: Parsed, _sample_name: Option<String>) -> Part2Solution {
+  return parsed.lines.len().try_into().unwrap();
+}
+
+fn main() {
+  const DETAILS: RunDetails<Parsed, Part1Solution, Part2Solution> = RunDetails {
+    year: %YEAR%,
+    day: %DAY%,
+    parse,
+    part1,
+    part2,
+  };
+  run(DETAILS);
+}

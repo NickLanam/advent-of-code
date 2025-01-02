@@ -19,7 +19,7 @@ adventOfCode() {
     local tot="$(git rev-parse --show-toplevel)"
     cd "$tot/javascript"
 
-    local year="$(date +"%Y")"
+    local year="${YEAR:-$(date +"%Y")}"
     cd "./$year" || exit 2
 
     if [[ "x$1" == "x" ]]; then

@@ -1,0 +1,12 @@
+[package]
+name = "advent_lib"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+cargo_metadata = "0.19.1"
+chrono = "0.4.39"
+error-chain = "0.12.4"
+regex = "1.11.1"
+reqwest = { version = "0.12.12", features = ["blocking"] }

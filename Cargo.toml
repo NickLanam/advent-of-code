@@ -1,0 +1,26 @@
+[workspace]
+members = ["advent_lib", "20[0-9][0-9]"]
+
+[package]
+name = "advent_of_code"
+version = "1.0.0"
+authors = ["Nick Lanam"]
+edition = "2021"
+description = "Advent of Code"
+readme = "README.md"
+homepage = "https://adventofcode.com"
+repository = "https://github.com/NickLanam/advent-of-code"
+
+[dependencies]
+chrono = "0.4.39"
+clap = { version = "4.5.23", features = ["derive"] }
+advent_lib = { path = "./advent_lib" }
+cargo_metadata = "0.19.1"
+
+[workspace.package]
+version = "1.0.0"
+authors = ["Nick Lanam"]
+edition = "2021"
+
+[workspace.dependencies]
+advent_lib = { path = "advent_lib" }
