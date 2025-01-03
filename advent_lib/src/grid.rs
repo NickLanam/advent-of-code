@@ -1,16 +1,58 @@
 use fnv::FnvBuildHasher;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-fn to_key(x: i32, y: i32) -> u64 {
+pub fn to_key(x: i32, y: i32) -> u64 {
   let xu = x as u32;
   let yu = y as u32;
   return ((xu as u64) << 32) + (yu as u64);
 }
 
-fn from_key(k: u64) -> (i32, i32) {
+pub fn from_key(k: u64) -> (i32, i32) {
   let x = (k >> 32) as u32;
   let y = k as u32;
   return (x as i32, y as i32);
+}
+
+pub struct Infinite2dSet {
+  state: HashSet<u64, FnvBuildHasher>,
+}
+
+impl Infinite2dSet {
+  pub fn new(capacity: usize) -> Infinite2dSet {
+    Infinite2dSet {
+      state: HashSet::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
+    }
+  }
+
+  pub fn len(&self) -> usize {
+    self.state.len()
+  }
+
+  pub fn has(&self, x: i32, y: i32) -> bool {
+    self.state.contains(&to_key(x, y))
+  }
+
+  pub fn add(&mut self, x: i32, y: i32) -> bool {
+    self.state.insert(to_key(x, y))
+  }
+
+  pub fn remove(&mut self, x: i32, y: i32) -> bool {
+    self.state.remove(&to_key(x, y))
+  }
+
+  pub fn toggle(&mut self, x: i32, y: i32) -> bool {
+    let k = to_key(x, y);
+    let is_present = self.state.contains(&k);
+    if is_present {
+      self.state.remove(&k)
+    } else {
+      self.state.insert(k)
+    }
+  }
+
+  pub fn keys(&mut self) -> impl Iterator<Item = (i32, i32)> + use<'_> {
+    self.state.iter().map(|k| from_key(*k))
+  }
 }
 
 pub struct Infinite2dGrid<V> {
@@ -48,6 +90,10 @@ impl<V> Infinite2dGrid<V> {
     } else {
       self.state.remove(&to_key(x, y));
     }
+  }
+
+  pub fn remove(&mut self, x: i32, y: i32) -> Option<V> {
+    self.state.remove(&to_key(x, y))
   }
 
   pub fn keys(&self) -> impl Iterator<Item = (i32, i32)> + use<'_, V> {
