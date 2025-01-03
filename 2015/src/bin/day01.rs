@@ -3,24 +3,21 @@ use advent_lib::runner::{run, PartId, RunDetails};
 type Part1Solution = i64;
 type Part2Solution = usize;
 
-#[derive(Debug)]
-struct Parsed {
-  lines: Vec<String>,
-}
+type Parsed = String;
 
 fn parse(lines: Vec<String>, _sample_name: Option<String>, _for_part: PartId) -> Parsed {
-  return Parsed { lines };
+  lines[0].to_string()
 }
 
-fn part1(parsed: Parsed, _sample_name: Option<String>) -> Part1Solution {
-  return parsed.lines[0]
+fn part1(line: Parsed, _sample_name: Option<String>) -> Part1Solution {
+  return line
     .chars()
     .fold(0_i64, |a, c| a + (if c == '(' { 1 } else { -1 }));
 }
 
-fn part2(parsed: Parsed, _sample_name: Option<String>) -> Part2Solution {
+fn part2(line: Parsed, _sample_name: Option<String>) -> Part2Solution {
   let mut floor: i64 = 0;
-  for (i, c) in parsed.lines[0].chars().enumerate() {
+  for (i, c) in line.chars().enumerate() {
     match c {
       '(' => {
         floor += 1;

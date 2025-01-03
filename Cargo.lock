@@ -24,6 +24,7 @@ dependencies = [
  "cargo_metadata",
  "chrono",
  "error-chain",
+ "fnv",
  "regex",
  "reqwest",
 ]

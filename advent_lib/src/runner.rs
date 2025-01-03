@@ -13,6 +13,7 @@ pub fn exec_day(year: u16, day: u16, workspace_root: &PathBuf) {
     .current_dir(workspace_root)
     .arg("-q")
     .arg("run")
+    .arg("--release")
     .arg("--package")
     .arg(format!("advent_of_code_{year}"))
     .arg("--bin")
