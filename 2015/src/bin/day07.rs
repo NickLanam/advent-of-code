@@ -2,12 +2,12 @@ use advent_lib::runner::{Day, PartId};
 use anyhow::{Context, Result};
 use fnv::FnvBuildHasher;
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 type P1Out = u16;
 type P2Out = u16;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Op {
   Literal,
   And,
@@ -26,6 +26,55 @@ struct Command {
 }
 
 type Parsed = Vec<Command>;
+
+type Registers = HashMap<String, u16, FnvBuildHasher>;
+fn simulate<'a>(commands: &Parsed, preset_b: Option<u16>) -> Result<Registers> {
+  let mut registers = Registers::with_hasher(FnvBuildHasher::default());
+  if preset_b.is_some() {
+    registers.insert("b".to_string(), preset_b.unwrap());
+  }
+  let get_reg_val = |key: String, reg: &mut Registers| -> Option<u16> {
+    let lit = key.parse::<u16>();
+    if lit.is_ok() {
+      return lit.ok();
+    }
+    if reg.contains_key(&key) {
+      return Some(*reg.get(&key).unwrap_or(&0));
+    }
+    return None;
+  };
+  let mut queue = VecDeque::from_iter(commands.into_iter());
+  while !queue.is_empty() {
+    let command = queue.remove(0).unwrap();
+    if preset_b.is_some() && command.op == Op::Literal && command.c == "b" {
+      continue;
+    }
+    let need_b = command.op != Op::Literal && command.op != Op::Not;
+    if !command.a.is_some() || (need_b && !command.b.is_some()) {
+      queue.push_back(command);
+      continue;
+    }
+    let av = get_reg_val(command.a.clone().unwrap(), &mut registers);
+    let bv = match command.b.clone() {
+      Some(bk) => get_reg_val(bk, &mut registers),
+      None => Some(0),
+    };
+    if !av.is_some() || (need_b && !bv.is_some()) {
+      queue.push_back(command);
+      continue;
+    }
+    let val: u16 = match command.op {
+      Op::Literal => av.unwrap(),
+      Op::Not => !av.unwrap(),
+      Op::And => av.unwrap() & bv.unwrap(),
+      Op::Or => av.unwrap() | bv.unwrap(),
+      Op::Lshift => av.unwrap() << bv.unwrap(),
+      Op::Rshift => av.unwrap() >> bv.unwrap(),
+    };
+    registers.insert(command.c.to_string(), val);
+  }
+  return Ok(registers);
+}
 
 struct Solver {}
 impl Day<Parsed, P1Out, P2Out> for Solver {
@@ -81,45 +130,19 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
   fn part1(&self, commands: &Parsed, sample_name: Option<String>) -> Result<P1Out> {
     let target_gate = if sample_name.is_some() { "i" } else { "a" };
-    let mut registers =
-      HashMap::<String, u16, FnvBuildHasher>::with_hasher(FnvBuildHasher::default());
-    for command in commands {
-      let Command { op, a, b, c } = command;
-      let av = match a {
-        Some(ref ak) => *registers.get(ak).unwrap_or(&0),
-        None => 0,
-      };
-      let bv = match b {
-        Some(ref bk) => *registers.get(bk).unwrap_or(&0),
-        None => 0,
-      };
-
-      match op {
-        Op::Literal => {
-          registers.insert(c.to_string(), av);
-        }
-        Op::Not => {
-          registers.insert(c.to_string(), !av);
-        }
-        Op::And => {
-          registers.insert(c.to_string(), av & bv);
-        }
-        Op::Or => {
-          registers.insert(c.to_string(), av | bv);
-        }
-        Op::Lshift => {
-          registers.insert(c.to_string(), av << bv);
-        }
-        Op::Rshift => {
-          registers.insert(c.to_string(), av >> bv);
-        }
-      }
-    }
+    let registers = simulate(commands, None)?;
     Ok(*registers.get(target_gate).unwrap())
   }
 
-  fn part2(&self, _commands: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    Ok(0)
+  fn part2(&self, commands: &Parsed, sample_name: Option<String>) -> Result<P2Out> {
+    // Sample doesn't really have a meaningful thing to do for this one
+    if sample_name.is_some() {
+      return Ok(1);
+    }
+    let first_pass = simulate(commands, None)?;
+    let av = *first_pass.get("a").unwrap();
+    let second_pass = simulate(commands, Some(av))?;
+    Ok(*second_pass.get("a").unwrap())
   }
 }
 
