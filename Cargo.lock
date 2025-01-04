@@ -21,6 +21,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 name = "advent_lib"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "cargo_metadata",
  "chrono",
  "error-chain",
@@ -34,6 +35,7 @@ name = "advent_of_code"
 version = "1.0.0"
 dependencies = [
  "advent_lib",
+ "anyhow",
  "cargo_metadata",
  "chrono",
  "clap",
@@ -44,6 +46,8 @@ name = "advent_of_code_2015"
 version = "1.0.0"
 dependencies = [
  "advent_lib",
+ "anyhow",
+ "fnv",
  "regex",
  "rust-crypto",
 ]
@@ -120,6 +124,12 @@ dependencies = [
  "anstyle",
  "windows-sys 0.59.0",
 ]
+
+[[package]]
+name = "anyhow"
+version = "1.0.95"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
 name = "atomic-waker"

@@ -1,5 +1,6 @@
 use crate::color::*;
 use crate::paths::{get_relevant_paths, RelevantPaths};
+use anyhow::{bail, Context, Result};
 use chrono::TimeZone;
 use chrono::{
   prelude::{FixedOffset, NaiveDate, Utc},
@@ -11,26 +12,25 @@ use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 use std::{thread, time::Duration};
 
-type TaskResult = Result<Option<String>, String>;
+type TaskResult = Result<Option<String>>;
 
 /// Prepares solution files for a given day of Advent of Code.
 /// * If that year's project is not yet set up, creates it first.
 /// * If that day's code is not yet set up, creates it first.
 /// * If that day's input is not yet downloaded, checks if it's available and then downloads it if so.
 /// * If the input is not available yet, waits until it is and shows a countdown clock until then.
-pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<(), String> {
-  let this_year = Utc::now().year().try_into().unwrap();
+pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<()> {
+  let this_year = Utc::now()
+    .year()
+    .try_into()
+    .context("Couldn't get current year")?;
 
   if year < 2015 || year > this_year {
-    return Err(format!(
-      "Advent of Code does not exist for the year {year}."
-    ));
+    bail!("Advent of Code does not exist for the year {year}.");
   }
 
   if day < 1 || day > 25 {
-    return Err(format!(
-      "Advent of code runs from December 1 through December 25, not {day}."
-    ));
+    bail!("Advent of code runs from December 1 through December 25, not {day}.");
   }
 
   let paths = get_relevant_paths(year, day, workspace_root);
@@ -50,74 +50,65 @@ pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<(), String
   println!("🔧 {BRIGHT_BLACK}Setup:{RESET} {BOLD}Advent of Code {GREEN}{year}{RESET}, Day {BOLD}{GREEN}{day}{RESET} 🔧");
 
   let tasks: Vec<Box<dyn Fn() -> TaskResult>> = vec![
-    Box::new(|| maybe_init_year(year, &paths)),
-    Box::new(|| maybe_init_day(year, day, &paths)),
-    Box::new(|| maybe_download_input(year, day, &paths)),
+    Box::new(|| maybe_init_year(year, &paths).context("Failed to init year {year}")),
+    Box::new(|| maybe_init_day(year, day, &paths).context("Failed to init day {year}-{day:0>2}")),
+    Box::new(|| {
+      maybe_download_input(year, day, &paths)
+        .context("Failed to download input for {year}-{day:0>2}")
+    }),
   ];
 
   for task in tasks.iter() {
-    match task() {
-      Ok(None) => {}
-      Ok(Some(msg)) => {
-        println!(" {GREEN}✓ {RESET}{msg}");
-      }
-      Err(msg) => {
-        eprintln!(" {RED}✕ {RESET}{msg}");
-        return Err(String::from("Setup failed."));
-      }
+    if let Some(msg) = task()? {
+      println!(" {GREEN}✓ {RESET}{msg}");
     }
   }
 
   Ok(())
 }
 
-fn ask_for_cookie(cookie_path: &PathBuf) -> Result<(), std::io::Error> {
+fn ask_for_cookie(cookie_path: &PathBuf) -> Result<()> {
   print!(" • Paste your session cookie and press Enter: ");
   io::stdout().flush()?;
   let mut cookie = String::new();
   io::stdin()
     .read_line(&mut cookie)
-    .expect("Please paste your cookie and press Enter.");
+    .context("Tried to read a line from stdin and was not able")?;
 
-  return fs::write(cookie_path, cookie.trim());
+  fs::write(cookie_path, cookie.trim()).context("Failed to write cookie file")?;
+
+  Ok(())
 }
 
 fn maybe_init_year(year: u16, paths: &RelevantPaths) -> TaskResult {
   let mut changed_something = false;
 
   if !paths.src_bin.exists() {
-    if let Err(err) = fs::create_dir_all(&paths.src_bin) {
-      return Err(err.to_string());
-    } else {
-      changed_something = true;
-    }
+    fs::create_dir_all(&paths.src_bin)
+      .with_context(|| format!("Could not create {:?}", paths.src_bin))?;
+    changed_something = true;
   }
 
   if !paths.year_input.exists() {
-    if let Err(err) = fs::create_dir_all(&paths.year_input) {
-      return Err(err.to_string());
-    } else {
-      changed_something = true;
-    }
+    fs::create_dir_all(&paths.year_input)
+      .context("")
+      .with_context(|| format!("Could not create {:?}", paths.year_input))?;
+    changed_something = true;
   }
 
   if !paths.year_cargo_toml.exists() {
-    let template =
-      fs::read_to_string(&paths.template_cargo_toml).expect("Failed to read Cargo.toml template");
+    let template = fs::read_to_string(&paths.template_cargo_toml)
+      .context("Failed to read Cargo.toml template")?;
     let contents = template.replace("%YEAR%", year.to_string().as_str());
-    if let Err(err) = fs::write(&paths.year_cargo_toml, contents) {
-      return Err(err.to_string());
-    } else {
-      changed_something = true;
-    }
+    fs::write(&paths.year_cargo_toml, contents)
+      .context("")
+      .with_context(|| format!("Could not create {:?}", paths.year_cargo_toml))?;
+    changed_something = true;
   }
 
   if !paths.year_cookie.exists() {
-    if let Err(err) = ask_for_cookie(&paths.year_cookie) {
-      return Err(err.to_string());
-    } else {
-      changed_something = true;
-    }
+    ask_for_cookie(&paths.year_cookie)?;
+    changed_something = true;
   }
 
   return Ok(if changed_something {
@@ -137,7 +128,7 @@ fn maybe_init_day(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
     let res = fs::write(&paths.day_rs, contents);
     match res {
       Err(err) => {
-        return Err(err.to_string());
+        bail!(err.to_string());
       }
       _ => {}
     }
@@ -146,12 +137,12 @@ fn maybe_init_day(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
   return Ok(None);
 }
 
-fn wait_for_input_available(year: u16, day: u16) -> bool {
+fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
   // Puzzles unlock at midnight on the east coast of the USA, which is UTC-5 during December.
   let unlock_ms = FixedOffset::east_opt(-5 * 3_600)
     .unwrap()
     .from_local_datetime(
-      &NaiveDate::from_ymd_opt(year.try_into().unwrap(), 12, day.try_into().unwrap())
+      &NaiveDate::from_ymd_opt(year.into(), 12, day.into())
         .unwrap()
         .and_hms_nano_opt(0, 0, 0, 0)
         .unwrap(),
@@ -162,7 +153,7 @@ fn wait_for_input_available(year: u16, day: u16) -> bool {
 
   let mut now_ms = Utc::now().timestamp_millis();
   let mut remain_ms = unlock_ms - now_ms;
-  let fancy_duration = |millis| {
+  let fancy_duration = |millis| -> String {
     let delta = chrono::TimeDelta::milliseconds(millis);
     if delta.num_days() == 0 {
       return format!(
@@ -190,9 +181,9 @@ fn wait_for_input_available(year: u16, day: u16) -> bool {
       );
     }
     print!("{CLEAR_TO_START_OF_PREVIOUS_LINE}");
-    return true;
+    return Ok(true);
   }
-  return false;
+  return Ok(false);
 }
 
 fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
@@ -226,42 +217,35 @@ fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResul
   }
 
   // Show a live countdown timer until the puzzle unlocks
-  if wait_for_input_available(year, day) {
+  if let Ok(true) = wait_for_input_available(year, day) {
     changed_something = true;
   }
 
   // Puzzle is unlocked, download the input if we need to
-  let real_in_contents = fs::read_to_string(&real_in).unwrap();
+  // Note: this file is created above if it didn't already exist, so failing to read it is serious indeed.
+  let real_in_contents =
+    fs::read_to_string(&real_in).context("Input file {real_in:?} went missing")?;
+
   if real_in_contents.len() == 0 || real_in_contents.contains("Please don't repeatedly request") {
-    let cookie = fs::read_to_string(&paths.year_cookie).expect("Cookie file went missing");
+    let cookie = fs::read_to_string(&paths.year_cookie).context("Cookie file went missing")?;
     let client = reqwest::blocking::Client::new();
-    let result = client
+    let response = client
       .get(format!("https://adventofcode.com/{year}/day/{day}/input"))
       .header("Cookie", format!("session={cookie}"))
-      .send();
+      .send()
+      .context("Failed to download input file")?;
 
-    match result {
-      Ok(response) => {
-        if response.status() == 500 {
-          // TODO: Ask the user to input it again, then repeat, instead of crashing.
-          return Err(String::from(
-            "Server gave a 500 response, cookie is likely stale",
-          ));
-        } else {
-          let body = response.text().expect("Could not get body text properly");
-          if body.contains("Please log in") {
-            // TODO: Ask the user to input it again, then repeat, instead of crashing.
-            return Err(String::from(
-              "Server says you aren't logged in, cookie is likely stale",
-            ));
-          } else {
-            fs::write(&real_in, body.clone())
-              .expect(format!("Failed to save body to file:\n{}", body).as_str());
-          }
-        }
-      }
-      Err(err) => {
-        return Err(err.to_string());
+    if response.status() == 500 {
+      // TODO: Ask the user to input it again, then repeat, instead of crashing.
+      bail!("Server gave a 500 response, cookie is likely stale");
+    } else {
+      let body = response.text().expect("Could not get body text properly");
+      if body.contains("Please log in") {
+        // TODO: Ask the user to input it again, then repeat, instead of crashing.
+        bail!("Server says you aren't logged in, cookie is likely stale");
+      } else {
+        fs::write(&real_in, body.clone())
+          .with_context(|| format!("Failed to save body to file:\n{body}"))?;
       }
     }
     changed_something = true;

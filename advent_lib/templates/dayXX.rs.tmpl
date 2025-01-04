@@ -1,33 +1,31 @@
-use advent_lib::runner::{run, PartId, RunDetails};
+use advent_lib::runner::{Day, PartId};
+use anyhow::Result;
 
-type Part1Solution = u64;
-type Part2Solution = u64;
+type P1Out = u64;
+type P2Out = u64;
+type Parsed = Vec<String>;
 
-#[derive(Debug)]
-struct Parsed {
-  lines: Vec<String>,
+struct Solver {}
+impl Day<Parsed, P1Out, P2Out> for Solver {
+  fn parse(
+    &self,
+    lines: Vec<String>,
+    _sample_name: Option<String>,
+    _for_part: PartId,
+  ) -> Result<Parsed> {
+    Ok(lines)
+  }
+
+  fn part1(&self, lines: &Parsed, _sample_name: Option<String>) -> Result<P1Out> {
+    println!("{lines:#?}");
+    Ok(0)
+  }
+
+  fn part2(&self, _lines: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
+    Ok(0)
+  }
 }
 
-fn parse(lines: Vec<String>, _sample_name: Option<String>, _for_part: PartId) -> Parsed {
-  return Parsed { lines };
-}
-
-fn part1(parsed: Parsed, _sample_name: Option<String>) -> Part1Solution {
-  println!("{parsed:#?}");
-  return parsed.lines.len().try_into().unwrap();
-}
-
-fn part2(parsed: Parsed, _sample_name: Option<String>) -> Part2Solution {
-  return parsed.lines.len().try_into().unwrap();
-}
-
-fn main() {
-  const DETAILS: RunDetails<Parsed, Part1Solution, Part2Solution> = RunDetails {
-    year: %YEAR%,
-    day: %DAY%,
-    parse,
-    part1,
-    part2,
-  };
-  run(DETAILS);
+fn main() -> Result<()> {
+  Solver {}.run(%YEAR%, %DAY%)
 }

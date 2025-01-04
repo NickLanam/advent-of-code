@@ -1,8 +1,8 @@
-use std::u64::MAX;
-
-use advent_lib::runner::{run, RunDetails};
+use advent_lib::runner::{Day, PartId};
+use anyhow::Result;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
+use std::u64::MAX;
 
 type Parsed = String;
 
@@ -19,13 +19,26 @@ fn solve(input: String, start_pattern: String) -> u64 {
   return 0;
 }
 
-fn main() {
-  const DETAILS: RunDetails<Parsed, u64, u64> = RunDetails {
-    year: 2015,
-    day: 4,
-    parse: |lines, _, _| lines[0].clone(),
-    part1: |input, _| solve(input, "00000".to_string()),
-    part2: |input, _| solve(input, "000000".to_string()),
-  };
-  run(DETAILS);
+struct Solver {}
+impl Day<Parsed, u64, u64> for Solver {
+  fn parse(
+    &self,
+    lines: Vec<String>,
+    _sample_name: Option<String>,
+    _for_part: PartId,
+  ) -> Result<Parsed> {
+    Ok(lines[0].to_string())
+  }
+
+  fn part1(&self, input: &Parsed, _sample_name: Option<String>) -> Result<u64> {
+    Ok(solve(input.to_string(), "00000".to_string()))
+  }
+
+  fn part2(&self, input: &Parsed, _sample_name: Option<String>) -> Result<u64> {
+    Ok(solve(input.to_string(), "000000".to_string()))
+  }
+}
+
+fn main() -> Result<()> {
+  Solver {}.run(2015, 4)
 }

@@ -16,6 +16,7 @@ chrono = "0.4.39"
 clap = { version = "4.5.23", features = ["derive"] }
 advent_lib = { path = "./advent_lib" }
 cargo_metadata = "0.19.1"
+anyhow = "1.0.95"
 
 [workspace.package]
 version = "1.0.0"
@@ -24,3 +25,4 @@ edition = "2021"
 
 [workspace.dependencies]
 advent_lib = { path = "advent_lib" }
+anyhow = "1.0.95"
