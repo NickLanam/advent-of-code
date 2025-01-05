@@ -27,7 +27,7 @@ pub fn exec_day(year: u16, day: u16, workspace_root: &PathBuf) -> Result<()> {
     .context("Child process crashed")?;
 
   if !exit_status.success() {
-    bail!("Child process ended with a non-zero exit code: {exit_status:?}");
+    bail!("Child exited with {exit_status:?}");
   }
   Ok(())
 }
@@ -154,10 +154,12 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
           Some(sample_name.to_string()),
           PartId::P1,
         )
-        .context("Parsing error for sample {sample_name}")?;
+        .with_context(|| format!("Parsing error for sample {sample_name}"))?;
       let out = &self
         .part1(parsed, Some(sample_name.to_string()))
-        .context("Part 1 error")?;
+        .with_context(|| {
+          format!(" {RED}✕ {RESET}Part 1 error on sample {YELLOW}{sample_name}{RESET}")
+        })?;
       let out_string = format!("{out:#?}");
       let expect_string = expect1_lines.join("\n");
       if out_string == expect_string {
@@ -177,7 +179,7 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
       let solve_start = Instant::now();
       let out = &self
         .part1(parsed, None)
-        .context("Part 1 error on real input")?;
+        .with_context(|| format!(" {RED}✕ {RESET}Part 1 error on real data"))?;
       let solve_duration = solve_start.elapsed();
       let time_str = format!(
         "{BRIGHT_BLACK}(Parse {RESET}{}{BRIGHT_BLACK}, Solve {RESET}{}{BRIGHT_BLACK}){RESET}",
@@ -198,10 +200,12 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
           Some(sample_name.to_string()),
           PartId::P1,
         )
-        .context("Parsing error for sample {sample_name}")?;
+        .with_context(|| format!("Parsing error for sample {sample_name}"))?;
       let out = &self
         .part2(parsed, Some(sample_name.to_string()))
-        .context("Part 2 error")?;
+        .with_context(|| {
+          format!(" {RED}✕ {RESET}Part 2 error on sample {YELLOW}{sample_name}{RESET}")
+        })?;
       let out_string = format!("{out:#?}");
       let expect_string = expect2_lines.join("\n");
       if out_string == expect_string {
@@ -221,7 +225,7 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
       let solve_start = Instant::now();
       let out = &self
         .part2(parsed, None)
-        .context("Part 2 error on real input")?;
+        .with_context(|| format!(" {RED}✕ {RESET}Part 2 error on real data"))?;
       let solve_duration = solve_start.elapsed();
       let time_str = format!(
         "{BRIGHT_BLACK}(Parse {RESET}{}{BRIGHT_BLACK}, Solve {RESET}{}{BRIGHT_BLACK}){RESET}",

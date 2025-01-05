@@ -1,4 +1,4 @@
-use advent_lib::{bootstrap, runner};
+use advent_lib::{bootstrap, color::*, runner};
 use anyhow::{Context, Result};
 use cargo_metadata::MetadataCommand;
 use chrono::{prelude::Utc, Datelike};
@@ -21,7 +21,9 @@ fn main() -> Result<()> {
   let binding = MetadataCommand::new().exec().unwrap().workspace_root;
   let workspace_root = PathBuf::from(&binding);
 
-  bootstrap::setup(year, day, &workspace_root).context("{RED} ✕ {BOLD}BOOTSTRAP FAILED{RESET}")?;
-  runner::exec_day(year, day, &workspace_root).context("{RED} ✕ {BOLD}RUNNER FAILED{RESET}")?;
+  bootstrap::setup(year, day, &workspace_root)
+    .with_context(|| format!("{RED} ✕ {BOLD}BOOTSTRAP FAILED{RESET}"))?;
+  runner::exec_day(year, day, &workspace_root)
+    .with_context(|| format!("{RED} ✕ {BOLD}RUNNER FAILED{RESET}"))?;
   Ok(())
 }
