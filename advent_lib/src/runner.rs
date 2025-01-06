@@ -203,7 +203,7 @@ pub trait Day<
         .parse(
           sample_lines.clone(),
           Some(sample_name.to_string()),
-          PartId::P1,
+          PartId::P2,
         )
         .with_context(|| format!("Parsing error for sample {sample_name}"))?;
       let out = &self

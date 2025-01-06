@@ -42,8 +42,12 @@ fn solve(graph: &Parsed) -> Result<i32> {
     }
 
     for next in entry.remain.as_slice() {
-      let ab = graph.find_edge(*entry.path.last().unwrap(), *next).unwrap();
-      let ba = graph.find_edge(*next, *entry.path.last().unwrap()).unwrap();
+      let last = *entry.path.last().unwrap();
+      let ab = graph.find_edge(last, *next).unwrap();
+      let ba = graph.find_edge(*next, last).unwrap();
+
+      let edge_cost_a = graph.edge_weight(ab).unwrap();
+      let edge_cost_b = graph.edge_weight(ba).unwrap();
 
       let mut next_path: Vec<NodeIndex> = entry.path.clone();
       next_path.push(next.to_owned());
@@ -60,13 +64,6 @@ fn solve(graph: &Parsed) -> Result<i32> {
       if next_remain.len() == 0 && next_path.first().cmp(&next_path.last()) != Ordering::Equal {
         next_remain.push(*next_path.first().unwrap());
       }
-
-      let edge_cost_a = graph
-        .edge_weight(ab)
-        .context("Found edge but did not find cost")?;
-      let edge_cost_b = graph
-        .edge_weight(ba)
-        .context("Found edge but did not find cost")?;
 
       stack.push(StackEntry {
         path: next_path,
@@ -85,7 +82,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     &self,
     lines: Vec<String>,
     _sample_name: Option<String>,
-    _for_part: PartId,
+    for_part: PartId,
   ) -> Result<Parsed> {
     let re = Regex::new(
       r"^(?<a>[^\s]+) would (?<mode>gain|lose) (?<amount>\d+) happiness units by sitting next to (?<b>.+)\.$",
@@ -122,6 +119,18 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
       graph.add_edge(an, bn, diff);
     }
+
+    if for_part == PartId::P2 {
+      let you_ni = graph.add_node("You".to_string());
+      for ni in graph.node_indices() {
+        if ni.cmp(&you_ni) == Ordering::Equal {
+          continue;
+        }
+        graph.add_edge(you_ni, ni, 0);
+        graph.add_edge(ni, you_ni, 0);
+      }
+    }
+
     Ok(graph)
   }
 
@@ -129,17 +138,8 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     solve(graph)
   }
 
-  fn part2(&self, original_graph: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    let mut graph = original_graph.clone();
-    let you_ni = graph.add_node("You".to_string());
-    for ni in graph.node_indices() {
-      if ni.cmp(&you_ni) == Ordering::Equal {
-        continue;
-      }
-      graph.add_edge(you_ni, ni, 0);
-      graph.add_edge(ni, you_ni, 0);
-    }
-    solve(&graph)
+  fn part2(&self, graph: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
+    solve(graph)
   }
 }
 
