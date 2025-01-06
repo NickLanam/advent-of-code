@@ -60,7 +60,12 @@ fn duration_string(duration: Duration) -> String {
   }
 }
 
-pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::Debug> {
+pub trait Day<
+  Parsed,
+  Part1Solution: std::fmt::Debug + std::fmt::Display,
+  Part2Solution: std::fmt::Debug + std::fmt::Display,
+>
+{
   /// The file has already been opened, trimmed, and converted to a Vec of lines.
   ///
   /// Turn it into whatever format you need here.
@@ -160,7 +165,7 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
         .with_context(|| {
           format!(" {RED}✕ {RESET}Part 1 error on sample {YELLOW}{sample_name}{RESET}")
         })?;
-      let out_string = format!("{out:#?}");
+      let out_string = out.to_string();
       let expect_string = expect1_lines.join("\n");
       if out_string == expect_string {
         // TODO: some test_only flag that renders this line and skips running against real
@@ -186,7 +191,7 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
         duration_string(parse_duration),
         duration_string(solve_duration)
       );
-      println!(" {BOLD}{BRIGHT_YELLOW}★ {RESET}Star 1 {time_str}: {YELLOW}{out:?}{RESET}");
+      println!(" {BOLD}{BRIGHT_YELLOW}★ {RESET}Star 1 {time_str}: {YELLOW}{out}{RESET}");
     } else {
       eprintln!(" {RED}★ {RESET}Star 1: {RED}{part1_test_failures:?} failed test(s){RESET}");
     }
@@ -206,7 +211,7 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
         .with_context(|| {
           format!(" {RED}✕ {RESET}Part 2 error on sample {YELLOW}{sample_name}{RESET}")
         })?;
-      let out_string = format!("{out:#?}");
+      let out_string = out.to_string();
       let expect_string = expect2_lines.join("\n");
       if out_string == expect_string {
         // TODO: some test_only flag that renders this line and skips running against real
@@ -232,7 +237,7 @@ pub trait Day<Parsed, Part1Solution: std::fmt::Debug, Part2Solution: std::fmt::D
         duration_string(parse_duration),
         duration_string(solve_duration)
       );
-      println!(" {BOLD}{BRIGHT_YELLOW}★ {RESET}Star 2 {time_str}: {YELLOW}{out:?}{RESET}");
+      println!(" {BOLD}{BRIGHT_YELLOW}★ {RESET}Star 2 {time_str}: {YELLOW}{out}{RESET}");
     } else {
       eprintln!(" {RED}★ {RESET}Star 2: {RED}{part2_test_failures:?} failed test(s){RESET}");
     }
