@@ -1,5 +1,5 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use petgraph::graph::{DiGraph, NodeIndex};
 use regex::Regex;
 use std::{cmp::Ordering, collections::HashMap};
@@ -42,13 +42,8 @@ fn solve(graph: &Parsed) -> Result<i32> {
     }
 
     for next in entry.remain.as_slice() {
-      let ab = graph.find_edge(*entry.path.last().unwrap(), *next);
-      let ba = graph.find_edge(*next, *entry.path.last().unwrap());
-      if !ab.is_some() || !ba.is_some() {
-        bail!("Input graph is not fully connected!");
-      }
-      let abe = ab.unwrap();
-      let bae = ba.unwrap();
+      let ab = graph.find_edge(*entry.path.last().unwrap(), *next).unwrap();
+      let ba = graph.find_edge(*next, *entry.path.last().unwrap()).unwrap();
 
       let mut next_path: Vec<NodeIndex> = entry.path.clone();
       next_path.push(next.to_owned());
@@ -67,10 +62,10 @@ fn solve(graph: &Parsed) -> Result<i32> {
       }
 
       let edge_cost_a = graph
-        .edge_weight(abe)
+        .edge_weight(ab)
         .context("Found edge but did not find cost")?;
       let edge_cost_b = graph
-        .edge_weight(bae)
+        .edge_weight(ba)
         .context("Found edge but did not find cost")?;
 
       stack.push(StackEntry {
@@ -97,25 +92,24 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     )?;
     let mut graph = DiGraph::<String, i32>::new();
     let mut node_keys = HashMap::<String, NodeIndex<u32>>::new();
+
+    let mut key_for = |n: &str, g: &mut DiGraph<String, i32>| -> NodeIndex<u32> {
+      if node_keys.contains_key(n) {
+        return *node_keys.get(n).unwrap();
+      } else {
+        let k = g.add_node(n.to_string());
+        node_keys.insert(n.to_string(), k);
+        return k;
+      }
+    };
+
     for line in lines.into_iter() {
       let caps = re.captures(line.as_str()).context("Bad parser regex")?;
-      let a = caps.name("a").unwrap().as_str().to_string();
-      let an: NodeIndex<u32>;
-      if node_keys.contains_key(&a) {
-        an = *node_keys.get(&a).to_owned().unwrap();
-      } else {
-        an = graph.add_node(a.clone());
-        node_keys.insert(a.clone(), an);
-      }
+      let a = caps.name("a").unwrap().as_str();
+      let an = key_for(a, &mut graph);
 
-      let b = caps.name("b").unwrap().as_str().to_string();
-      let bn: NodeIndex<u32>;
-      if node_keys.contains_key(&b) {
-        bn = *node_keys.get(&b).to_owned().unwrap();
-      } else {
-        bn = graph.add_node(b.clone());
-        node_keys.insert(b.clone(), bn);
-      }
+      let b = caps.name("b").unwrap().as_str();
+      let bn = key_for(b, &mut graph);
 
       let mode = caps.name("mode").unwrap().as_str().to_string();
       let amount = caps
@@ -128,7 +122,6 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
       graph.add_edge(an, bn, diff);
     }
-    // println!("{graph:#?}");
     Ok(graph)
   }
 
