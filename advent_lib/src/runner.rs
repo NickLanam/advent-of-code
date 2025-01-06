@@ -40,19 +40,19 @@ pub enum PartId {
 
 fn duration_string(duration: Duration) -> String {
   if duration.as_micros() < 1 {
-    return format!(" {: >3}{CYAN}ns{RESET}", duration.subsec_nanos());
+    return format!("{: >4}{CYAN}ns{RESET}", duration.subsec_nanos());
   } else if duration.as_millis() < 1 {
-    return format!(" {: >3}{GREEN}µs{RESET}", duration.subsec_micros());
+    return format!("{: >4}{GREEN}µs{RESET}", duration.subsec_micros());
   } else if duration.as_millis() <= 99 {
     return format!(
-      " {: >4.1}{BRIGHT_BLACK}ms{RESET}",
+      "{: >4.1}{BRIGHT_BLACK}ms{RESET}",
       (duration.subsec_micros() as f64) / 1_000.0
     );
   } else if duration.as_millis() <= 999 {
-    return format!(" {}{BRIGHT_BLACK}ms{RESET}", duration.subsec_millis());
+    return format!("{: >4}{BRIGHT_BLACK}ms{RESET}", duration.subsec_millis());
   } else if duration.as_secs() <= 9 {
     return format!(
-      "{:.1}{RED}sec{RESET}",
+      "{: >3.1}{RED}sec{RESET}",
       (duration.as_millis() as f64) / 1_000.0
     );
   } else {
