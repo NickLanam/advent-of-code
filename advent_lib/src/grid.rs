@@ -28,6 +28,10 @@ impl Infinite2dSet {
     self.state.len()
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.state.is_empty()
+  }
+
   pub fn has(&self, x: i32, y: i32) -> bool {
     self.state.contains(&to_key(x, y))
   }
@@ -85,8 +89,8 @@ impl<V> Infinite2dGrid<V> {
   pub fn set_action(&mut self, x: i32, y: i32, action: fn(Option<&V>) -> Option<V>) {
     let existing = self.get(x, y);
     let next = action(existing);
-    if next.is_some() {
-      self.state.insert(to_key(x, y), next.unwrap());
+    if let Some(next) = next {
+      self.state.insert(to_key(x, y), next);
     } else {
       self.state.remove(&to_key(x, y));
     }

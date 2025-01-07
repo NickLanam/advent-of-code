@@ -28,10 +28,10 @@ struct Command {
 type Parsed = Vec<Command>;
 
 type Registers = HashMap<String, u16, FnvBuildHasher>;
-fn simulate<'a>(commands: &Parsed, preset_b: Option<u16>) -> Result<Registers> {
+fn simulate(commands: &Parsed, preset_b: Option<u16>) -> Result<Registers> {
   let mut registers = Registers::with_hasher(FnvBuildHasher::default());
-  if preset_b.is_some() {
-    registers.insert("b".to_string(), preset_b.unwrap());
+  if let Some(preset_b) = preset_b {
+    registers.insert("b".to_string(), preset_b);
   }
   let get_reg_val = |key: String, reg: &mut Registers| -> Option<u16> {
     let lit = key.parse::<u16>();

@@ -2,13 +2,12 @@ use advent_lib::runner::{Day, PartId};
 use anyhow::Result;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
-use std::u64::MAX;
 
 type Parsed = String;
 
 fn solve(input: String, start_pattern: String) -> u64 {
   let mut hasher = Md5::new();
-  for i in 0_u64..MAX {
+  for i in 0_u64..u64::MAX {
     hasher.reset();
     hasher.input_str(&format!("{}{}", input.clone(), i));
     let digest = hasher.result_str();

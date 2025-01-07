@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct RelevantPaths {
@@ -12,7 +12,7 @@ pub struct RelevantPaths {
   pub real_input: PathBuf,
 }
 
-pub fn get_relevant_paths(year: u16, day: u16, root: &PathBuf) -> RelevantPaths {
+pub fn get_relevant_paths(year: u16, day: u16, root: &Path) -> RelevantPaths {
   RelevantPaths {
     template_cargo_toml: root.join("advent_lib/templates/Cargo.toml.tmpl"),
     template_day_rs: root.join("advent_lib/templates/dayXX.rs.tmpl"),

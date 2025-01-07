@@ -9,7 +9,7 @@ use chrono::{
 use std::fs;
 use std::io::{self, Write};
 use std::os::unix::fs::MetadataExt;
-use std::path::PathBuf;
+use std::path::Path;
 use std::{thread, time::Duration};
 
 type TaskResult = Result<Option<String>>;
@@ -19,7 +19,7 @@ type TaskResult = Result<Option<String>>;
 /// * If that day's code is not yet set up, creates it first.
 /// * If that day's input is not yet downloaded, checks if it's available and then downloads it if so.
 /// * If the input is not available yet, waits until it is and shows a countdown clock until then.
-pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<()> {
+pub fn setup(year: u16, day: u16, workspace_root: &Path) -> Result<()> {
   let this_year = Utc::now()
     .year()
     .try_into()
@@ -35,7 +35,7 @@ pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<()> {
 
   let paths = get_relevant_paths(year, day, workspace_root);
 
-  let need_file = |path: &PathBuf| !path.exists() || fs::metadata(path).unwrap().size() == 0;
+  let need_file = |path: &Path| !path.exists() || fs::metadata(path).unwrap().size() == 0;
   let setup_required = !paths.src_bin.exists()
     || !paths.year_input.exists()
     || need_file(&paths.year_cargo_toml)
@@ -67,7 +67,7 @@ pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<()> {
   Ok(())
 }
 
-fn ask_for_cookie(cookie_path: &PathBuf) -> Result<()> {
+fn ask_for_cookie(cookie_path: &Path) -> Result<()> {
   print!(" • Paste your session cookie and press Enter: ");
   io::stdout().flush()?;
   let mut cookie = String::new();

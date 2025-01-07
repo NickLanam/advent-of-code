@@ -60,6 +60,8 @@ fn duration_string(duration: Duration) -> String {
   }
 }
 
+type Sample = (String, Vec<String>, Vec<String>, Vec<String>);
+
 pub trait Day<
   Parsed,
   Part1Solution: std::fmt::Debug + std::fmt::Display,
@@ -84,14 +86,7 @@ pub trait Day<
   /// If sample_name is set, it declares _which_ sample is being run.
   fn part2(&self, parsed: &Parsed, sample_name: Option<String>) -> Result<Part2Solution>;
 
-  fn load_inputs(
-    &self,
-    year: u16,
-    day: u16,
-  ) -> Result<(
-    Vec<(String, Vec<String>, Vec<String>, Vec<String>)>,
-    Vec<String>,
-  )> {
+  fn load_inputs(&self, year: u16, day: u16) -> Result<(Vec<Sample>, Vec<String>)> {
     let binding = MetadataCommand::new()
       .exec()
       .context("Could not detect Cargo workspace root when loading inputs")?
