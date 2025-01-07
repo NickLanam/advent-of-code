@@ -40,7 +40,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               double = true;
             }
           }
-          return vowels >= 3 && double;
+          vowels >= 3 && double
         })
         .fold(0, |a, c| a + (if c { 1 } else { 0 })),
     )
@@ -75,7 +75,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               return true;
             }
           }
-          return false;
+          false
         })
         .fold(0, |a, c| a + (if c { 1 } else { 0 })),
     )

@@ -31,18 +31,18 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
   }
 
   fn part1(&self, presents: &Parsed, _sample_name: Option<String>) -> Result<P1Out> {
-    Ok(presents.into_iter().fold(0, |a, (l, w, h)| {
+    Ok(presents.iter().fold(0, |a, (l, w, h)| {
       let x = l * w;
       let y = w * h;
       let z = h * l;
-      let m = *vec![x, y, z].iter().min().unwrap();
+      let m = *[x, y, z].iter().min().unwrap();
       a + 2 * (x + y + z) + m
     }))
   }
 
   fn part2(&self, presents: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    Ok(presents.into_iter().fold(0, |a, (l, w, h)| {
-      let mut sides = vec![l, w, h];
+    Ok(presents.iter().fold(0, |a, (l, w, h)| {
+      let mut sides = [l, w, h];
       sides.sort();
       let r = 2 * (sides[0] + sides[1]);
       a + (l * w * h) + r

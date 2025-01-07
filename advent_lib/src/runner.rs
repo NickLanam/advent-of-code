@@ -40,7 +40,7 @@ pub enum PartId {
 
 fn duration_string(duration: Duration) -> String {
   if duration.as_micros() < 1 {
-    return format!("{: >4}{CYAN}ns{RESET}", duration.subsec_nanos());
+    format!("{: >4}{CYAN}ns{RESET}", duration.subsec_nanos())
   } else if duration.as_millis() < 1 {
     return format!("{: >4}{GREEN}µs{RESET}", duration.subsec_micros());
   } else if duration.as_millis() <= 99 {
@@ -136,7 +136,7 @@ pub trait Day<
 
     let real_lines = load_input("real".to_string())?;
 
-    return Ok((sample_files, real_lines));
+    Ok((sample_files, real_lines))
   }
 
   fn run(&self, year: u16, day: u16) -> Result<()> {

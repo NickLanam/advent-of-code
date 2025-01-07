@@ -22,9 +22,8 @@ fn solve(graph: &Parsed, max_instead: bool) -> Result<u64> {
     let path = vec![ni.to_owned()];
     let remain = all
       .as_slice()
-      .into_iter()
-      .filter(|other| ni.cmp(other) != Ordering::Equal)
-      .map(|o| *o)
+      .iter()
+      .filter(|other| ni.cmp(other) != Ordering::Equal).copied()
       .collect();
     stack.push(StackEntry {
       path,
@@ -53,9 +52,8 @@ fn solve(graph: &Parsed, max_instead: bool) -> Result<u64> {
         let next_remain: Vec<NodeIndex> = entry
           .remain
           .as_slice()
-          .into_iter()
-          .filter(|r| next.cmp(r) != Ordering::Equal)
-          .map(|o| *o)
+          .iter()
+          .filter(|r| next.cmp(r) != Ordering::Equal).copied()
           .collect();
 
         let edge_cost = graph

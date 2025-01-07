@@ -22,9 +22,8 @@ fn solve(graph: &Parsed) -> Result<i32> {
     let path = vec![ni.to_owned()];
     let remain = all
       .as_slice()
-      .into_iter()
-      .filter(|other| ni.cmp(other) != Ordering::Equal)
-      .map(|o| *o)
+      .iter()
+      .filter(|other| ni.cmp(other) != Ordering::Equal).copied()
       .collect();
     stack.push(StackEntry {
       path,
@@ -55,13 +54,12 @@ fn solve(graph: &Parsed) -> Result<i32> {
       let mut next_remain: Vec<NodeIndex> = entry
         .remain
         .as_slice()
-        .into_iter()
-        .filter(|r| next.cmp(r) != Ordering::Equal)
-        .map(|o| *o)
+        .iter()
+        .filter(|r| next.cmp(r) != Ordering::Equal).copied()
         .collect();
 
       // A little different from day 9: we have to close the loop when done.
-      if next_remain.len() == 0 && next_path.first().cmp(&next_path.last()) != Ordering::Equal {
+      if next_remain.is_empty() && next_path.first().cmp(&next_path.last()) != Ordering::Equal {
         next_remain.push(*next_path.first().unwrap());
       }
 
@@ -92,11 +90,11 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
     let mut key_for = |n: &str, g: &mut DiGraph<String, i32>| -> NodeIndex<u32> {
       if node_keys.contains_key(n) {
-        return *node_keys.get(n).unwrap();
+        *node_keys.get(n).unwrap()
       } else {
         let k = g.add_node(n.to_string());
         node_keys.insert(n.to_string(), k);
-        return k;
+        k
       }
     };
 
@@ -115,7 +113,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         .as_str()
         .parse::<i32>()
         .unwrap();
-      let diff: i32 = if mode == "gain" { amount } else { -1 * amount };
+      let diff: i32 = if mode == "gain" { amount } else { -amount };
 
       graph.add_edge(an, bn, diff);
     }

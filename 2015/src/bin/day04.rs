@@ -16,7 +16,7 @@ fn solve(input: String, start_pattern: String) -> u64 {
       return i;
     }
   }
-  return 0;
+  0
 }
 
 struct Solver {}

@@ -29,7 +29,7 @@ pub fn setup(year: u16, day: u16, workspace_root: &PathBuf) -> Result<()> {
     bail!("Advent of Code does not exist for the year {year}.");
   }
 
-  if day < 1 || day > 25 {
+  if !(1..=25).contains(&day) {
     bail!("Advent of code runs from December 1 through December 25, not {day}.");
   }
 
@@ -111,11 +111,11 @@ fn maybe_init_year(year: u16, paths: &RelevantPaths) -> TaskResult {
     changed_something = true;
   }
 
-  return Ok(if changed_something {
+  Ok(if changed_something {
     Some(format!("Created workspace for year {GREEN}{year}{RESET}"))
   } else {
     None
-  });
+  })
 }
 
 fn maybe_init_day(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
@@ -126,15 +126,12 @@ fn maybe_init_day(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
       .replace("%YEAR%", year.to_string().as_str())
       .replace("%DAY%", day.to_string().as_str());
     let res = fs::write(&paths.day_rs, contents);
-    match res {
-      Err(err) => {
-        bail!(err.to_string());
-      }
-      _ => {}
+    if let Err(err) = res {
+      bail!(err.to_string());
     }
     println!("{GREEN} ✓{RESET} Created {GREEN}{UNDERLINE}{year}{BRIGHT_BLACK}/src/bin/{GREEN}{BOLD}day{day:0>2}.rs{RESET}");
   }
-  return Ok(None);
+  Ok(None)
 }
 
 fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
@@ -156,14 +153,14 @@ fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
   let fancy_duration = |millis| -> String {
     let delta = chrono::TimeDelta::milliseconds(millis);
     if delta.num_days() == 0 {
-      return format!(
+      format!(
         "{RED}{:0>2}:{:0>2}:{:0>2}{RESET}",
         delta.num_hours(),
         delta.num_minutes(),
         delta.num_seconds()
-      );
+      )
     } else {
-      return format!("{} days", delta.num_days());
+      format!("{} days", delta.num_days())
     }
   };
 
@@ -183,7 +180,7 @@ fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
     print!("{CLEAR_TO_START_OF_PREVIOUS_LINE}");
     return Ok(true);
   }
-  return Ok(false);
+  Ok(false)
 }
 
 fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
@@ -226,7 +223,7 @@ fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResul
   let real_in_contents =
     fs::read_to_string(&real_in).context("Input file {real_in:?} went missing")?;
 
-  if real_in_contents.len() == 0 || real_in_contents.contains("Please don't repeatedly request") {
+  if real_in_contents.is_empty() || real_in_contents.contains("Please don't repeatedly request") {
     let cookie = fs::read_to_string(&paths.year_cookie).context("Cookie file went missing")?;
     let client = reqwest::blocking::Client::new();
     let response = client
@@ -252,8 +249,8 @@ fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResul
   }
 
   if changed_something {
-    return Ok(Some(String::from("Downloaded input")));
+    Ok(Some(String::from("Downloaded input")))
   } else {
-    return Ok(None);
+    Ok(None)
   }
 }

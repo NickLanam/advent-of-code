@@ -37,7 +37,7 @@ fn find_next_pass(old: &Parsed) -> u64 {
         _ => {}
       }
     }
-    return next;
+    next
   };
 
   let is_valid = |p: u64| -> bool {
@@ -76,7 +76,7 @@ fn find_next_pass(old: &Parsed) -> u64 {
     if first == 0 || second == 0 || first == second {
       return false;
     }
-    return true;
+    true
   };
 
   // The password might have been valid before, so increment it once.
@@ -85,7 +85,7 @@ fn find_next_pass(old: &Parsed) -> u64 {
   while !is_valid(password) {
     password = inc(password);
   }
-  return password;
+  password
 }
 
 struct Solver {}
@@ -105,7 +105,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
     // We can't force-cast bytes to a [u8; 8] to do u64::from_be_bytes,
     // so we have to iterate. The compiler is smart enough to fix it.
-    for (i, c) in bytes.into_iter().enumerate() {
+    for (i, c) in bytes.iter().enumerate() {
       out += (*c as u64) << (8 * (7 - i));
     }
     Ok(out)

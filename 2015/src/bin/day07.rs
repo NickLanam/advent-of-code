@@ -41,16 +41,16 @@ fn simulate<'a>(commands: &Parsed, preset_b: Option<u16>) -> Result<Registers> {
     if reg.contains_key(&key) {
       return Some(*reg.get(&key).unwrap_or(&0));
     }
-    return None;
+    None
   };
-  let mut queue = VecDeque::from_iter(commands.into_iter());
+  let mut queue = VecDeque::from_iter(commands);
   while !queue.is_empty() {
     let command = queue.remove(0).unwrap();
     if preset_b.is_some() && command.op == Op::Literal && command.c == "b" {
       continue;
     }
     let need_b = command.op != Op::Literal && command.op != Op::Not;
-    if !command.a.is_some() || (need_b && !command.b.is_some()) {
+    if command.a.is_none() || (need_b && command.b.is_none()) {
       queue.push_back(command);
       continue;
     }
@@ -59,7 +59,7 @@ fn simulate<'a>(commands: &Parsed, preset_b: Option<u16>) -> Result<Registers> {
       Some(bk) => get_reg_val(bk, &mut registers),
       None => Some(0),
     };
-    if !av.is_some() || (need_b && !bv.is_some()) {
+    if av.is_none() || (need_b && bv.is_none()) {
       queue.push_back(command);
       continue;
     }
@@ -73,7 +73,7 @@ fn simulate<'a>(commands: &Parsed, preset_b: Option<u16>) -> Result<Registers> {
     };
     registers.insert(command.c.to_string(), val);
   }
-  return Ok(registers);
+  Ok(registers)
 }
 
 struct Solver {}

@@ -10,7 +10,7 @@ fn solve(dirs: &Parsed, with_robo_santa: bool) -> usize {
     houses.set_action(x, y, |prev| Some(prev.unwrap_or(&0) + 1));
   };
 
-  let mut pos = vec![0, 0, 0, 0];
+  let mut pos = [0, 0, 0, 0];
   let mut shift = 0; // Toggles between Santa and Robo_Santa
   visit(0, 0); // Santa delivers a present at his starting location, too
   for dir in dirs {

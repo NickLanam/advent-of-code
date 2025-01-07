@@ -21,13 +21,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let re = Regex::new(r"\\(\\|x..|[^\\])").context("Bad regex")?;
     Ok(
       lines
-        .into_iter()
+        .iter()
         .map(|line| -> i64 {
           let code = line.len();
           let glyphs = re.replace_all(line, "_").len() - 2;
-          return (code as i64) - (glyphs as i64);
+          (code as i64) - (glyphs as i64)
         })
-        .fold(0, |a, c| a + c),
+        .sum::<i64>(),
     )
   }
 
@@ -35,13 +35,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let re = Regex::new(r#"(\\|")"#).context("Bad regex")?;
     Ok(
       lines
-        .into_iter()
+        .iter()
         .map(|line| -> i64 {
           let plain = line.len();
           let encoded = re.replace_all(line, "__").len() + 2;
-          return (encoded as i64) - (plain as i64);
+          (encoded as i64) - (plain as i64)
         })
-        .fold(0, |a, c| a + c),
+        .sum::<i64>(),
     )
   }
 }

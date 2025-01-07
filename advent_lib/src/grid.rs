@@ -4,13 +4,13 @@ use std::collections::{HashMap, HashSet};
 pub fn to_key(x: i32, y: i32) -> u64 {
   let xu = x as u32;
   let yu = y as u32;
-  return ((xu as u64) << 32) + (yu as u64);
+  ((xu as u64) << 32) + (yu as u64)
 }
 
 pub fn from_key(k: u64) -> (i32, i32) {
   let x = (k >> 32) as u32;
   let y = k as u32;
-  return (x as i32, y as i32);
+  (x as i32, y as i32)
 }
 
 pub struct Infinite2dSet {

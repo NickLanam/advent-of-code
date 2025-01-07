@@ -49,7 +49,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
           stack.push(sub);
         }
       } else if item.is_array() {
-        for sub in item.as_array().unwrap().into_iter() {
+        for sub in item.as_array().unwrap().iter() {
           stack.push(sub.to_owned());
         }
       } else if item.is_number() {

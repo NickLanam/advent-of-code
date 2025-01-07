@@ -58,7 +58,7 @@ fn expand(s: String) -> String {
   }
   expanded.push(run_of);
 
-  return expanded;
+  expanded
 }
 
 fn solve(s: String, iterations: u64) -> usize {
@@ -66,7 +66,7 @@ fn solve(s: String, iterations: u64) -> usize {
   for _ in 0..iterations {
     out = expand(out);
   }
-  return out.len();
+  out.len()
 }
 
 struct Solver {}
