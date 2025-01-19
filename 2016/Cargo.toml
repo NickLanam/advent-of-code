@@ -1,0 +1,10 @@
+[package]
+name = "advent_of_code_2016"
+description = "Advent of Code solutions for 2016"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+advent_lib = { workspace = true }
+anyhow = { workspace = true }
