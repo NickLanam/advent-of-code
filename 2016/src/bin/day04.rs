@@ -28,14 +28,15 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       lines
         .iter()
         .map(|line| {
-          let (left, right) = line.split_at(line.len() - 10);
-          let (sector_id_raw, checksum_raw) = right.split_once('[').unwrap();
-          let sector_id: u16 = sector_id_raw.parse().unwrap();
-          let checksum: String = checksum_raw[..checksum_raw.len() - 1].to_string();
+          // Some guarantees about the line that make it faster to parse:
+          // - The sector ID is always 3 digits (100-999 inclusive)
+          // - The checksum is always exactly 5 characters wrapped in []
+          // - The rest of the string won't need to be broken down further for either part.
+          let l = line.len();
           Room {
-            enc: left[..left.len() - 1].to_string(),
-            sector_id,
-            checksum,
+            enc: line[0..(l - 11)].to_string(),
+            sector_id: line[(l - 10)..(l - 7)].parse().unwrap(),
+            checksum: line[(l - 6)..(l - 1)].to_string(),
           }
         })
         .collect(),
@@ -44,37 +45,41 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
   fn part1(&self, rooms: &Parsed, _sample_name: Option<String>) -> Result<P1Out> {
     let mut out: u64 = 0;
-    for room in rooms {
-      // The number of times each letter, in alphabetical order, appears
-      // Hand-coding this initializer makes it a tiny bit faster at runtime.
-      let mut freq: [(char, usize); 26] = [
-        ('a', 0),
-        ('b', 0),
-        ('c', 0),
-        ('d', 0),
-        ('e', 0),
-        ('f', 0),
-        ('g', 0),
-        ('h', 0),
-        ('i', 0),
-        ('j', 0),
-        ('k', 0),
-        ('l', 0),
-        ('m', 0),
-        ('n', 0),
-        ('o', 0),
-        ('p', 0),
-        ('q', 0),
-        ('r', 0),
-        ('s', 0),
-        ('t', 0),
-        ('u', 0),
-        ('v', 0),
-        ('w', 0),
-        ('x', 0),
-        ('y', 0),
-        ('z', 0),
-      ];
+
+    // The number of times each letter, in alphabetical order, appears.
+    // Hand-initialized once, then copied, to speed up the loop a little.
+    let initial_freq: [(char, u8); 26] = [
+      ('a', 0),
+      ('b', 0),
+      ('c', 0),
+      ('d', 0),
+      ('e', 0),
+      ('f', 0),
+      ('g', 0),
+      ('h', 0),
+      ('i', 0),
+      ('j', 0),
+      ('k', 0),
+      ('l', 0),
+      ('m', 0),
+      ('n', 0),
+      ('o', 0),
+      ('p', 0),
+      ('q', 0),
+      ('r', 0),
+      ('s', 0),
+      ('t', 0),
+      ('u', 0),
+      ('v', 0),
+      ('w', 0),
+      ('x', 0),
+      ('y', 0),
+      ('z', 0),
+    ];
+
+    'room_check: for room in rooms {
+      // Copied, rather than re-initialized, to shave off a few microseconds.
+      let mut freq = initial_freq;
       for c in room.enc.chars() {
         if c == '-' {
           continue;
@@ -83,12 +88,16 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         freq[i as usize - 97].1 += 1; // 97 is ASCII 'a', and we will only see letters
       }
 
-      freq.sort_by(|(_, a), (_, b)| b.cmp(a));
+      // This is a tiny bit faster than `freq.sort_by(|(_, a), (_, b)| b.cmp(a))`
+      freq.sort_by_key(|(_, k)| std::cmp::Reverse(*k));
 
-      let correct_checksum = freq.iter().take(5).map(|(c, _)| c).collect::<String>();
-      if correct_checksum == room.checksum {
-        out += room.sector_id as u64;
+      // If the entire checksum matches (stop early if not), it counts
+      for (check, c) in room.checksum.chars().enumerate() {
+        if freq[check].0 != c {
+          continue 'room_check;
+        }
       }
+      out += room.sector_id as u64;
     }
     Ok(out)
   }
