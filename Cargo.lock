@@ -61,6 +61,7 @@ dependencies = [
  "advent_lib",
  "anyhow",
  "regex",
+ "rust-crypto",
 ]
 
 [[package]]
