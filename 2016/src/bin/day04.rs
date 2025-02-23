@@ -1,5 +1,5 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 #[derive(Debug)]
 struct Room {

@@ -1,7 +1,7 @@
 use advent_lib::{bootstrap, color::*, runner};
 use anyhow::{Context, Result};
 use cargo_metadata::MetadataCommand;
-use chrono::{prelude::Utc, Datelike};
+use chrono::{Datelike, prelude::Utc};
 use clap::Parser;
 use std::path::PathBuf;
 

@@ -1,5 +1,5 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 
 #[derive(PartialEq, Debug)]
 enum Direction {

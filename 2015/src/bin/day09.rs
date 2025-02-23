@@ -23,7 +23,8 @@ fn solve(graph: &Parsed, max_instead: bool) -> Result<u64> {
     let remain = all
       .as_slice()
       .iter()
-      .filter(|other| ni.cmp(other) != Ordering::Equal).copied()
+      .filter(|other| ni.cmp(other) != Ordering::Equal)
+      .copied()
       .collect();
     stack.push(StackEntry {
       path,
@@ -53,7 +54,8 @@ fn solve(graph: &Parsed, max_instead: bool) -> Result<u64> {
           .remain
           .as_slice()
           .iter()
-          .filter(|r| next.cmp(r) != Ordering::Equal).copied()
+          .filter(|r| next.cmp(r) != Ordering::Equal)
+          .copied()
           .collect();
 
         let edge_cost = graph

@@ -35,7 +35,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       let size = containers
         .iter()
         .enumerate()
-        .filter(|(i, _)| (combo >> (l - i - 1) & 0b1) == 1)
+        .filter(|(i, _)| ((combo >> (l - i - 1)) & 0b1) == 1)
         .map(|(_, c)| *c)
         .sum::<u32>();
       if size == eggnog {
@@ -56,7 +56,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       let count = containers
         .iter()
         .enumerate()
-        .filter(|(i, _)| (combo >> (l - i - 1) & 0b1) == 1);
+        .filter(|(i, _)| ((combo >> (l - i - 1)) & 0b1) == 1);
       let size = &count.clone().map(|(_, c)| *c).sum::<u32>();
       if *size == eggnog {
         let c = &count.count();

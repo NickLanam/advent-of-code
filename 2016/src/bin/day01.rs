@@ -1,7 +1,7 @@
 use advent_lib::direction::{CardinalDirection, Rotation};
 use advent_lib::grid::Infinite2dSet;
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 type P1Out = u64;
 type P2Out = u64;

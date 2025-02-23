@@ -63,7 +63,9 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut valid: u64 = 0;
     for line in lines.chunks_exact(3) {
       let [[a0, a1, a2], [b0, b1, b2], [c0, c1, c2]] = *line else {
-        panic!("Unreachable (chunks_exact implementation guarantees it, but the compiler is unable to prove it)");
+        panic!(
+          "Unreachable (chunks_exact implementation guarantees it, but the compiler is unable to prove it)"
+        );
       };
       if a0 + b0 > c0 && a0 + c0 > b0 && b0 + c0 > a0 {
         valid += 1;

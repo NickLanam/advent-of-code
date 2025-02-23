@@ -1,5 +1,5 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 type P1Out = usize;
 type P2Out = usize;

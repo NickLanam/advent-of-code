@@ -1,5 +1,5 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use fnv::{FnvBuildHasher, FnvHashMap, FnvHashSet};
 
 type P1Out = usize;

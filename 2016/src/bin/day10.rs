@@ -1,5 +1,5 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use fnv::{FnvBuildHasher, FnvHashMap};
 
 #[derive(Clone, Debug, PartialEq, Eq, std::hash::Hash)]

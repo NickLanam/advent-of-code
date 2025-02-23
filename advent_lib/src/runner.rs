@@ -1,5 +1,5 @@
 use crate::color::*;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use cargo_metadata::MetadataCommand;
 use regex::Regex;
 use std::fs;
@@ -166,7 +166,9 @@ pub trait Day<
         // TODO: some test_only flag that renders this line and skips running against real
         // println!(" {GREEN}✓ {RESET}Part 1 test {YELLOW}{sample_name}{RESET} {GREEN}passed{RESET}");
       } else {
-        eprintln!(" {RED}✕ {RESET}Part 1 test {YELLOW}{sample_name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}");
+        eprintln!(
+          " {RED}✕ {RESET}Part 1 test {YELLOW}{sample_name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}"
+        );
         part1_test_failures += 1;
       }
     }
@@ -212,7 +214,9 @@ pub trait Day<
         // TODO: some test_only flag that renders this line and skips running against real
         // println!(" {GREEN}✓ {RESET}Part 2 test {YELLOW}{sample_name}{RESET} {GREEN}passed{RESET}");
       } else {
-        eprintln!(" {RED}✕ {RESET}Part 2 test {YELLOW}{sample_name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}");
+        eprintln!(
+          " {RED}✕ {RESET}Part 2 test {YELLOW}{sample_name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}"
+        );
         part2_test_failures += 1;
       }
     }

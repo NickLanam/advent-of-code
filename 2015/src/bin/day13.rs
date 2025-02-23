@@ -23,7 +23,8 @@ fn solve(graph: &Parsed) -> Result<i32> {
     let remain = all
       .as_slice()
       .iter()
-      .filter(|other| ni.cmp(other) != Ordering::Equal).copied()
+      .filter(|other| ni.cmp(other) != Ordering::Equal)
+      .copied()
       .collect();
     stack.push(StackEntry {
       path,
@@ -55,7 +56,8 @@ fn solve(graph: &Parsed) -> Result<i32> {
         .remain
         .as_slice()
         .iter()
-        .filter(|r| next.cmp(r) != Ordering::Equal).copied()
+        .filter(|r| next.cmp(r) != Ordering::Equal)
+        .copied()
         .collect();
 
       // A little different from day 9: we have to close the loop when done.

@@ -1,10 +1,10 @@
 use crate::color::*;
-use crate::paths::{get_relevant_paths, RelevantPaths};
-use anyhow::{bail, Context, Result};
+use crate::paths::{RelevantPaths, get_relevant_paths};
+use anyhow::{Context, Result, bail};
 use chrono::TimeZone;
 use chrono::{
-  prelude::{FixedOffset, NaiveDate, Utc},
   Datelike,
+  prelude::{FixedOffset, NaiveDate, Utc},
 };
 use std::fs;
 use std::io::{self, Write};
@@ -47,7 +47,9 @@ pub fn setup(year: u16, day: u16, workspace_root: &Path) -> Result<()> {
     return Ok(());
   }
 
-  println!("🔧 {BRIGHT_BLACK}Setup:{RESET} {BOLD}Advent of Code {GREEN}{year}{RESET}, Day {BOLD}{GREEN}{day}{RESET} 🔧");
+  println!(
+    "🔧 {BRIGHT_BLACK}Setup:{RESET} {BOLD}Advent of Code {GREEN}{year}{RESET}, Day {BOLD}{GREEN}{day}{RESET} 🔧"
+  );
 
   let tasks: Vec<Box<dyn Fn() -> TaskResult>> = vec![
     Box::new(|| maybe_init_year(year, &paths).context("Failed to init year {year}")),
@@ -129,7 +131,9 @@ fn maybe_init_day(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
     if let Err(err) = res {
       bail!(err.to_string());
     }
-    println!("{GREEN} ✓{RESET} Created {GREEN}{UNDERLINE}{year}{BRIGHT_BLACK}/src/bin/{GREEN}{BOLD}day{day:0>2}.rs{RESET}");
+    println!(
+      "{GREEN} ✓{RESET} Created {GREEN}{UNDERLINE}{year}{BRIGHT_BLACK}/src/bin/{GREEN}{BOLD}day{day:0>2}.rs{RESET}"
+    );
   }
   Ok(None)
 }

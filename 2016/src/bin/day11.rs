@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use advent_lib::runner::{Day, PartId};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use fnv::{FnvBuildHasher, FnvHashSet};
 use itertools::Itertools;
 
