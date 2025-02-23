@@ -11,3 +11,4 @@ anyhow = { workspace = true }
 fnv = "1.0.7"
 rust-crypto = "0.2.36"
 regex = "1.11.1"
+itertools = "0.14.0"
