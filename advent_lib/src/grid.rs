@@ -63,7 +63,7 @@ pub struct Infinite2dGrid<V> {
   state: HashMap<u64, V, FnvBuildHasher>,
 }
 
-impl<V> Infinite2dGrid<V> {
+impl<V: Clone> Infinite2dGrid<V> {
   pub fn new(capacity: usize) -> Infinite2dGrid<V> {
     Infinite2dGrid {
       state: HashMap::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
@@ -80,6 +80,16 @@ impl<V> Infinite2dGrid<V> {
 
   pub fn get_or_default<'a>(&'a self, x: i32, y: i32, default: &'a V) -> &'a V {
     self.get(x, y).unwrap_or(default)
+  }
+
+  pub fn get_or_set_default<F>(&mut self, x: i32, y: i32, create_default: F) -> &V
+  where
+    F: FnOnce() -> V,
+  {
+    if !self.has(x, y) {
+      self.set(x, y, create_default());
+    }
+    self.get(x, y).unwrap()
   }
 
   pub fn set(&mut self, x: i32, y: i32, v: V) -> Option<V> {
