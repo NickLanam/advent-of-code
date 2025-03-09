@@ -15,6 +15,8 @@ type P1Out = String;
 type P2Out = String;
 type Parsed = Vec<Instruction>;
 
+const ASCII_ZERO: u8 = 48;
+
 struct Solver {}
 impl Day<Parsed, P1Out, P2Out> for Solver {
   fn parse(
@@ -25,68 +27,56 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
   ) -> Result<Parsed> {
     let mut out: Vec<Instruction> = Vec::with_capacity(lines.len());
     for line in lines {
-      if line.starts_with("swap position") {
-        // swap position X with position Y
-        let (_, r0) = line
-          .split_once(" position ")
-          .context("Can't split swap position")?;
-        let (x_raw, y_raw) = r0
-          .split_once(" with position ")
-          .context("Can't split swap position")?;
-        out.push(Instruction::SwapPositions(x_raw.parse()?, y_raw.parse()?));
-      } else if line.starts_with("swap letter") {
-        // swap letter X with letter Y
-        let (_, r0) = line
-          .split_once(" letter ")
-          .context("Can't split swap letter")?;
-        let (x, y) = r0
-          .split_once(" with letter ")
-          .context("Can't split swap letter")?;
-        out.push(Instruction::SwapLetters(
-          x.chars().nth(0).unwrap(),
-          y.chars().nth(0).unwrap(),
-        ));
-      } else if line.starts_with("rotate left") {
-        // rotate left X steps
-        let (_, r0) = line
-          .split_once(" left ")
-          .context("Can't split rotate left")?;
-        let (x_raw, _) = r0.split_once(" ").context("Can't split rotate left")?;
-        out.push(Instruction::RotateLeftBy(x_raw.parse()?));
-      } else if line.starts_with("rotate right") {
-        // rotate right X steps
-        let (_, r0) = line
-          .split_once(" right ")
-          .context("Can't split rotate right")?;
-        let (x_raw, _) = r0.split_once(" ").context("Can't split rotate right")?;
-        out.push(Instruction::RotateRightBy(x_raw.parse()?));
-      } else if line.starts_with("rotate based on position of letter") {
-        // rotate based on position of letter X
-        let (_, x) = line
-          .split_once(" letter ")
-          .context("Can't split rotate based on position of letter")?;
-        out.push(Instruction::RotateBasedOn(x.chars().nth(0).unwrap()));
-      } else if line.starts_with("reverse positions") {
-        // reverse positions X through Y
-        let (_, r0) = line
-          .split_once(" positions ")
-          .context("Can't split reverse positions")?;
-        let (x_raw, y_raw) = r0
-          .split_once(" through ")
-          .context("Can't split reverse positions")?;
-        out.push(Instruction::ReverseRange(x_raw.parse()?, y_raw.parse()?));
-      } else if line.starts_with("move position") {
-        // move position X to position Y
-        let (_, r0) = line
-          .split_once(" position ")
-          .context("Can't split move position")?;
-        let (x_raw, y_raw) = r0
-          .split_once(" to position ")
-          .context("Can't split move position")?;
-        out.push(Instruction::Move(x_raw.parse()?, y_raw.parse()?));
-      } else {
-        bail!("Line does not match a known command: {line}");
-      }
+      // Doing string starts_with and split_once and parse():
+      // readable, takes about 15 microseconds to parse.
+      // Doing this signature thing with bytes: 5 microseconds.
+      // This only works because the input only ever has single digits!
+      let bytes: &[u8] = line.as_bytes();
+      let signature = (bytes[0], bytes[7]);
+      out.push(match signature {
+        (b's', b's') => {
+          // swap position X with position Y
+          let x: usize = (bytes[14] - ASCII_ZERO) as usize;
+          let y: usize = (bytes[30] - ASCII_ZERO) as usize;
+          Instruction::SwapPositions(x, y)
+        }
+        (b's', b't') => {
+          // swap letter X with letter Y
+          let a = char::from_u32(bytes[12] as u32).unwrap();
+          let b = char::from_u32(bytes[26] as u32).unwrap();
+          Instruction::SwapLetters(a, b)
+        }
+        (b'r', b'l') => {
+          // rotate left X steps
+          let x: usize = (bytes[12] - ASCII_ZERO) as usize;
+          Instruction::RotateLeftBy(x)
+        }
+        (b'r', b'r') => {
+          // rotate right X steps
+          let x: usize = (bytes[13] - ASCII_ZERO) as usize;
+          Instruction::RotateRightBy(x)
+        }
+        (b'r', b'b') => {
+          // rotate based on position of letter X
+          let a = char::from_u32(bytes[35] as u32).unwrap();
+          Instruction::RotateBasedOn(a)
+        }
+        (b'r', b' ') => {
+          // reverse positions X through Y
+          let x: usize = (bytes[18] - ASCII_ZERO) as usize;
+          let y: usize = (bytes[28] - ASCII_ZERO) as usize;
+          Instruction::ReverseRange(x, y)
+        }
+        (b'm', b's') => {
+          // move position X to position Y
+          let x: usize = (bytes[14] - ASCII_ZERO) as usize;
+          let y: usize = (bytes[28] - ASCII_ZERO) as usize;
+          Instruction::Move(x, y)
+        }
+        _ => {
+          bail!("Line did not have known signature");
+        }
+      });
     }
     Ok(out)
   }
@@ -104,14 +94,8 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
           chars.swap(*x, *y);
         }
         Instruction::SwapLetters(a, b) => {
-          let x = chars
-            .iter()
-            .position(|c| *c == *a)
-            .context("Can't find {a} in {chars:?}")?;
-          let y = chars
-            .iter()
-            .position(|c| *c == *b)
-            .context("Can't find {b} in {chars:?}")?;
+          let x = chars.iter().position(|c| *c == *a).context("")?;
+          let y = chars.iter().position(|c| *c == *b).context("")?;
           chars.swap(x, y);
         }
         Instruction::RotateLeftBy(r) => {
@@ -121,10 +105,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
           chars.rotate_right(*r);
         }
         Instruction::RotateBasedOn(a) => {
-          let p = chars
-            .iter()
-            .position(|c| *c == *a)
-            .context("Can't find {a} in {chars:?}")?;
+          let p = chars.iter().position(|c| *c == *a).context("")?;
           let r = (1 + p + (if p >= 4 { 1 } else { 0 })) % chars.len();
           chars.rotate_right(r);
         }
@@ -146,49 +127,51 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     Ok(chars.iter().collect())
   }
 
+  /// Undoes the effects of part 1, by running the
+  /// instructions' inverse operations in reverse order.
+  /// - rotate left X becomes rotate right X, and vice versa
+  /// - move X Y becomes move Y X
+  /// - rotate based on ... does some math, see below
+  /// - all other instructions are their own inverse already
+  ///
+  /// Regarding rotate based on...:
+  /// - 5-character strings have multiple unscrambles:
+  ///   - p = 0 -> r = 1, p' = 1
+  ///   - p = 1 -> r = 2, p' = 3
+  ///   - p = 2 -> r = 3, p' = 0 <- First 0
+  ///   - p = 3 -> r = 4, p' = 2
+  ///   - p = 4 -> r = 1, p' = 0 <- Second 0
+  ///
+  ///   If p' = 0, we can't know if r=3 or r=1.
+  ///   We COULD follow both paths (every time p' = 0),
+  ///   and return all resulting answers. But only the
+  ///   sample does this, so there's no point doing that.
+  ///
+  /// - 8-character strings only unscramble one way:
+  ///   - p = 0 -> r = 1, p' = 1
+  ///   - p = 1 -> r = 2, p' = 3
+  ///   - p = 2 -> r = 3, p' = 5
+  ///   - p = 3 -> r = 4, p' = 7
+  ///   - p = 4 -> r = 6, p' = 2
+  ///   - p = 5 -> r = 7, p' = 4
+  ///   - p = 6 -> r = 0, p' = 6
+  ///   - p = 7 -> r = 1, p' = 0
   fn part2(&self, instructions: &Parsed, sample_name: Option<String>) -> Result<P2Out> {
     if sample_name.is_some() {
-      // 5-character strings can't be perfectly
-      // unscrambled because of RotateBasedOn:
-
-      // p = 0 -> r = 1, p' = 1
-      // p = 1 -> r = 2, p' = 3
-      // p = 2 -> r = 3, p' = 0 <- First 0
-      // p = 3 -> r = 4, p' = 2
-      // p = 4 -> r = 1, p' = 0 <- Second 0
-
-      // If p' = 0, we can't know if r=3 or r=1.
-      // We COULD follow both paths (every time p' = 0),
-      // and return all resulting answers. But only the
-      // sample does this, so there's no point doing that.
+      // See above for why we're not bothering with this
       return Ok("abcde".to_string());
     }
 
-    // With an 8-character string, the RotateBasedOn instruction
-    // does map 1:1 from p' back to p (see below), so we can reliably
-    // reverse the operation and unscramble the string.
     let mut chars: Vec<char> = vec!['f', 'b', 'g', 'd', 'c', 'e', 'a', 'h'];
 
-    // Undoes the effects of part 1, but running the instructions
-    // end-to-start and doing the inverse of what they would normally do.
-    // - rotate left X becomes rotate right X, and vice versa
-    // - move X Y becomes move Y X
-    // - rotate relative has to do math
-    // - all other instructions are already their own inverse
     for instruction in instructions.iter().rev() {
       match instruction {
         Instruction::SwapPositions(x, y) => {
           chars.swap(*x, *y);
         }
         Instruction::SwapLetters(a, b) => {
-          let x = chars
-            .iter()
-            .position(|c| *c == *a)
-            .context("Can't find {a} in {chars:?}")?;
-          let y = chars
-            .iter()
-            .position(|c| *c == *b)
-            .context("Can't find {b} in {chars:?}")?;
+          let x = chars.iter().position(|c| *c == *a).context("")?;
+          let y = chars.iter().position(|c| *c == *b).context("")?;
           chars.swap(x, y);
         }
         Instruction::RotateLeftBy(r) => {
@@ -198,21 +181,10 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
           chars.rotate_left(*r);
         }
         Instruction::RotateBasedOn(a) => {
-          let p_prime = chars
-            .iter()
-            .position(|c| *c == *a)
-            .context("Can't find {a} in {chars:?}")?;
+          let p_prime = chars.iter().position(|c| *c == *a).context("")?;
 
           let r: usize = match p_prime {
-            // In an 8-char string... No overlap, maps perfectly!
-            // p = 0 -> r = 1, p' = 1
-            // p = 1 -> r = 2, p' = 3
-            // p = 2 -> r = 3, p' = 5
-            // p = 3 -> r = 4, p' = 7
-            // p = 4 -> r = 6, p' = 2
-            // p = 5 -> r = 7, p' = 4
-            // p = 6 -> r = 0, p' = 6
-            // p = 7 -> r = 1, p' = 0
+            // See above for how this works
             0 => 1,
             1 => 1,
             2 => 6,
@@ -222,7 +194,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             6 => 0,
             7 => 4,
             _ => {
-              bail!("Unreachable: char {a} was found at position {p_prime} in an 8-char string")
+              bail!("Unreachable")
             }
           };
 
