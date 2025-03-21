@@ -69,7 +69,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       return Ok(7);
     }
 
-    let (mut w, mut h, mut initial_empty_x, mut initial_empty_y) = (0, 0, 0, 0);
+    let (mut w, mut _h, mut initial_empty_x, mut initial_empty_y) = (0, 0, 0, 0);
     let mut h = 0;
     for node in nodes {
       if node.x >= w {
