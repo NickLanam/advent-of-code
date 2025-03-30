@@ -4,114 +4,127 @@ use advent_lib::runner::{Day, PartId};
 use anyhow::{Context, Result, bail};
 use fnv::{FnvBuildHasher, FnvHashMap, FnvHashSet};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Node {
   id: String,
-  weight: u32,
-  children: Vec<String>,
+  node_weight: i32,
+  total_weight: i32,
+  children: Vec<Node>,
 }
 
 type P1Out = String;
 type P2Out = i32;
-type Parsed = Vec<Node>;
+type Parsed = Node;
 
 struct Solver {}
 impl Day<Parsed, P1Out, P2Out> for Solver {
   fn parse(&self, lines: Vec<String>, _: Option<String>, _: PartId) -> Result<Parsed> {
-    let mut nodes: Vec<Node> = Vec::with_capacity(lines.len());
-    for line in lines {
+    // Part 1's answer is needed to construct the graph for part 2, so figure it out in the parse.
+    let mut all_children: FnvHashSet<&str> =
+      FnvHashSet::with_capacity_and_hasher(lines.len() - 1, FnvBuildHasher::default());
+    let mut explore: VecDeque<&str> = VecDeque::with_capacity(lines.len());
+    let mut initial_nodes: FnvHashMap<&str, (i32, Vec<&str>)> =
+      FnvHashMap::with_capacity_and_hasher(lines.len(), FnvBuildHasher::default());
+
+    for line in lines.iter() {
       let (id, r0) = line.split_once(" (").context("")?;
+      explore.push_back(id);
       let (weight_raw, r1) = r0.split_once(')').context("")?;
-      let mut children = vec![];
+      let mut child_names = vec![];
       if !r1.is_empty() {
         let (_, r2) = r1.split_once(" -> ").context("")?;
-        for child in r2.split(", ") {
-          children.push(child.to_string());
+        for child_name in r2.split(", ") {
+          child_names.push(child_name);
+          all_children.insert(child_name);
         }
       }
-      nodes.push(Node {
-        id: id.to_string(),
-        weight: weight_raw
-          .parse()
-          .with_context(|| "Cannot unwrap {weight_raw}")?,
-        children,
-      });
-    }
-    Ok(nodes)
-  }
-
-  fn part1(&self, nodes: &Parsed, _: Option<String>) -> Result<P1Out> {
-    let mut all_children: FnvHashSet<&str> =
-      FnvHashSet::with_capacity_and_hasher(nodes.len() - 1, FnvBuildHasher::default());
-    for n0 in nodes {
-      for child in n0.children.iter() {
-        all_children.insert(child.as_str());
-      }
-    }
-    for n1 in nodes {
-      if !all_children.contains(&n1.id.as_str()) {
-        return Ok(n1.id.to_string());
-      }
-    }
-    bail!("Failed to find");
-  }
-
-  fn part2(&self, nodes: &Parsed, _: Option<String>) -> Result<P2Out> {
-    // Step 1: Map out the parent/child relationships
-    let mut tree: FnvHashMap<&str, Vec<&str>> =
-      FnvHashMap::with_capacity_and_hasher(nodes.len(), FnvBuildHasher::default());
-    for node in nodes {
-      tree.insert(
-        node.id.as_str(),
-        node.children.iter().map(|c| c.as_str()).collect(),
-      );
+      initial_nodes.insert(id, (weight_raw.parse().context("")?, child_names));
     }
 
-    // Step 2: Map the node names to their weights and the sums of their child towers' weights
-    let mut weights: FnvHashMap<&str, (u32, Vec<u32>)> =
-      FnvHashMap::with_capacity_and_hasher(nodes.len(), FnvBuildHasher::default());
-    let mut explore: VecDeque<&str> = nodes.iter().map(|n| n.id.as_str()).collect();
+    // This is the part 1 answer, and the root of the graph for part 2
+    let &root_id = initial_nodes
+      .keys()
+      .find(|&id| !all_children.contains(id))
+      .context("")?;
+
+    let mut hydrated_nodes =
+      FnvHashMap::<&str, Node>::with_capacity_and_hasher(lines.len(), FnvBuildHasher::default());
+
     'outer: while !explore.is_empty() {
       let top = explore.pop_front().context("")?;
-      let node = nodes.iter().find(|n| n.id == top).context("")?;
-      let mut child_weights: Vec<u32> = vec![];
-      for child_key in node.children.iter() {
-        if let Some((child_own, grandchildren)) = weights.get(&child_key.as_str()) {
-          child_weights.push(child_own + grandchildren.iter().sum::<u32>());
+      let (own_weight, child_names) = initial_nodes.get(top).context("")?;
+      let mut children: Vec<Node> = vec![];
+      let mut child_sum = 0;
+      for &child_key in child_names {
+        if let Some(child) = hydrated_nodes.get(child_key) {
+          child_sum += child.total_weight;
+          children.push(child.clone());
         } else {
           explore.push_back(top);
           continue 'outer;
         }
       }
-      weights.insert(top, (node.weight, child_weights));
+      hydrated_nodes.insert(
+        top,
+        Node {
+          id: top.to_string(),
+          node_weight: *own_weight,
+          total_weight: *own_weight + child_sum,
+          children,
+        },
+      );
     }
 
-    // Step 3: Find the imbalance.
-    let root_node = self.part1(nodes, None)?.to_string();
-    let mut cursor = root_node.as_str();
-    let mut imbalance = 0;
-    println!("{weights:?}");
-    loop {
-      let (own_weight, child_weights) = weights.get(cursor).context("")?;
+    // Now build the tree from that
+    Ok(hydrated_nodes.get(root_id).context("")?.clone())
+  }
 
-      // Figure out if we're imbalanced at this level
-      let mut weight_map = FnvHashMap::<u32, u8>::with_hasher(FnvBuildHasher::default());
-      for w in child_weights {
-        weight_map.entry(*w).and_modify(|ww| *ww += 1).or_insert(1);
+  fn part1(&self, tree: &Parsed, _: Option<String>) -> Result<P1Out> {
+    Ok(tree.id.to_string())
+  }
+
+  fn part2(&self, tree: &Parsed, _: Option<String>) -> Result<P2Out> {
+    let mut cursor = tree;
+    let mut imbalance = 0;
+    loop {
+      let Node {
+        node_weight,
+        children,
+        ..
+      } = cursor;
+
+      // Check how many unique weights this level has (it'll be either 0, 1, or 2).
+      let mut weight_incidence = FnvHashMap::<i32, u8>::with_hasher(FnvBuildHasher::default());
+      for child in children {
+        weight_incidence
+          .entry(child.total_weight)
+          .and_modify(|cw| *cw += 1)
+          .or_insert(1);
       }
-      if weight_map.len() > 1 {
-        let (&good, _) = weight_map.iter().find(|&(_, count)| *count > 1).unwrap();
-        let (&bad, _) = weight_map.iter().find(|&(_, count)| *count == 1).unwrap();
-        // TODO: Set cursor to the new child, and compute imbalance
+
+      if weight_incidence.len() > 1 {
+        // The imbalance is in a child of this node,
+        // write down the gap and scan from there.
+        let (&good, _) = weight_incidence
+          .iter()
+          .find(|&(_, count)| *count > 1)
+          .context("")?;
+        let (&bad, _) = weight_incidence
+          .iter()
+          .find(|&(_, count)| *count == 1)
+          .context("")?;
+        imbalance = good - bad;
+        cursor = children
+          .iter()
+          .find(|c| c.total_weight == bad)
+          .context("")?;
+        continue;
       } else {
-        // The imbalance is not here.
-        // If it's already 0, then bail, the tree is in fact balanced.
-        // Otherwise, do the math here to get the answer!
+        // The imbalance either doesn't exist (an error), or this node is it
         if imbalance == 0 {
-          bail!("Tree seemed to be balanced");
+          bail!("Tree appears to be balanced; problem description promised that would not happen");
         } else {
-          // TODO: Math time, might be wrong?
-          return Ok((*own_weight as i32) - imbalance);
+          return Ok(node_weight + imbalance);
         }
       }
     }
