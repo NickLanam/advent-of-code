@@ -52,11 +52,13 @@ pub fn setup(year: u16, day: u16, workspace_root: &Path) -> Result<()> {
   );
 
   let tasks: Vec<Box<dyn Fn() -> TaskResult>> = vec![
-    Box::new(|| maybe_init_year(year, &paths).context("Failed to init year {year}")),
-    Box::new(|| maybe_init_day(year, day, &paths).context("Failed to init day {year}-{day:0>2}")),
+    Box::new(|| maybe_init_year(year, &paths).with_context(|| "Failed to init year {year}")),
+    Box::new(|| {
+      maybe_init_day(year, day, &paths).with_context(|| "Failed to init day {year}-{day:0>2}")
+    }),
     Box::new(|| {
       maybe_download_input(year, day, &paths)
-        .context("Failed to download input for {year}-{day:0>2}")
+        .with_context(|| "Failed to download input for {year}-{day:0>2}")
     }),
   ];
 
@@ -93,7 +95,6 @@ fn maybe_init_year(year: u16, paths: &RelevantPaths) -> TaskResult {
 
   if !paths.year_input.exists() {
     fs::create_dir_all(&paths.year_input)
-      .context("")
       .with_context(|| format!("Could not create {:?}", paths.year_input))?;
     changed_something = true;
   }
@@ -103,7 +104,6 @@ fn maybe_init_year(year: u16, paths: &RelevantPaths) -> TaskResult {
       .context("Failed to read Cargo.toml template")?;
     let contents = template.replace("%YEAR%", year.to_string().as_str());
     fs::write(&paths.year_cargo_toml, contents)
-      .context("")
       .with_context(|| format!("Could not create {:?}", paths.year_cargo_toml))?;
     changed_something = true;
   }
@@ -225,7 +225,7 @@ fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResul
   // Puzzle is unlocked, download the input if we need to
   // Note: this file is created above if it didn't already exist, so failing to read it is serious indeed.
   let real_in_contents =
-    fs::read_to_string(&real_in).context("Input file {real_in:?} went missing")?;
+    fs::read_to_string(&real_in).with_context(|| "Input file {real_in:?} went missing")?;
 
   if real_in_contents.is_empty() || real_in_contents.contains("Please don't repeatedly request") {
     let cookie = fs::read_to_string(&paths.year_cookie).context("Cookie file went missing")?;
