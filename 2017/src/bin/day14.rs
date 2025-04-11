@@ -1,15 +1,19 @@
-use advent_lib::runner::{Day, PartId};
+use advent_lib::{
+  grid::Infinite2dSet,
+  runner::{Day, PartId},
+};
 use anyhow::Result;
+use rayon::prelude::*;
 
 type P1Out = u32;
-type P2Out = u64;
-type Parsed = Vec<u8>;
+type P2Out = usize;
+type Parsed = Vec<u128>;
 
-fn knot_rounds(buffer: &mut [u8], in_bytes: &[u8], rounds: usize) {
+fn knot_rounds(buffer: &mut [u8], key: &[u8], rounds: usize) {
   let len = buffer.len();
   let mut cursor: usize = 0;
   for r in 0..rounds {
-    for (i, &window_u8) in in_bytes.iter().enumerate() {
+    for (i, &window_u8) in key.iter().enumerate() {
       let window = window_u8 as usize;
 
       // Reverse the target section by walking outside-in
@@ -25,12 +29,12 @@ fn knot_rounds(buffer: &mut [u8], in_bytes: &[u8], rounds: usize) {
       }
 
       // Move the cursor
-      cursor = (cursor + window + i + (in_bytes.len() * r)) % len;
+      cursor = (cursor + window + i + (key.len() * r)) % len;
     }
   }
 }
 
-fn make_knot(key: &[u8]) -> u128 {
+fn knot_hash(key: &[u8]) -> u128 {
   let mut knot: Vec<u8> = (0_u8..=255).collect();
   knot_rounds(&mut knot, key, 64);
   let hash = knot.chunks_exact(16).fold(0_u128, |mut out, bytes| {
@@ -45,39 +49,70 @@ fn make_knot(key: &[u8]) -> u128 {
 }
 
 fn make_grid(in_key: &[u8]) -> Vec<u128> {
-  (0_u8..128)
+  // Same procedure as 2017 Day 10 Part 2, with a different key.
+  // Doing it 128 times is slow, but par_iter helps a ton here.
+  (0_u8..=127)
+    .into_par_iter()
     .map(|n| {
-      let mut key: Vec<u8> = in_key.to_vec();
-      let mut rest: Vec<u8> = format!("-{n}").bytes().collect();
-      let mut always: Vec<u8> = vec![17, 31, 73, 47, 23];
-      key.append(&mut rest);
-      key.append(&mut always);
-      make_knot(&key)
+      let mut key: Vec<u8> = Vec::with_capacity(in_key.len() + 9);
+      key.extend(in_key.iter());
+      key.push(45); // ASCII '-'
+      key.extend(n.to_string().bytes());
+      key.extend([17, 31, 73, 47, 23].iter());
+      knot_hash(&key)
     })
     .collect()
 }
 
 struct Solver {}
 impl Day<Parsed, P1Out, P2Out> for Solver {
-  fn parse(
-    &self,
-    lines: Vec<String>,
-    _sample_name: Option<String>,
-    _for_part: PartId,
-  ) -> Result<Parsed> {
-    Ok(lines[0].bytes().collect())
+  fn parse(&self, lines: Vec<String>, _: Option<String>, _: PartId) -> Result<Parsed> {
+    let key: Vec<u8> = lines[0].bytes().collect();
+    Ok(make_grid(&key))
   }
 
-  fn part1(&self, in_bytes: &Parsed, _sample_name: Option<String>) -> Result<P1Out> {
-    Ok(
-      make_grid(in_bytes)
-        .iter()
-        .fold(0, |a, b| a + b.count_ones()),
-    )
+  fn part1(&self, grid: &Parsed, _: Option<String>) -> Result<P1Out> {
+    Ok(grid.iter().fold(0, |a, b| a + b.count_ones()))
   }
 
-  fn part2(&self, _lines: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    Ok(0)
+  /// A group finder similar to 2017 Day 12 Part 2.
+  /// This time, we don't need to remember the groups, only discover them.
+  fn part2(&self, grid: &Parsed, _: Option<String>) -> Result<P2Out> {
+    // Roughly half of the nodes are set, faster to allocate only what we use
+    let mut visited = Infinite2dSet::new(128 * 64);
+    let mut groups = 0;
+
+    let is_set = |x: i32, y: i32| {
+      if x < 0 || y < 0 || x > 127 || y > 127 {
+        return false;
+      }
+      let row = grid[y as usize];
+      row & (1 << (127 - x)) != 0
+    };
+
+    let mut visit = |x: i32, y: i32| {
+      if !is_set(x, y) || visited.has(x, y) {
+        return;
+      }
+      let mut frontier: Vec<(i32, i32)> = vec![(x, y)];
+      while let Some((fx, fy)) = frontier.pop() {
+        for (nx, ny) in [(fx - 1, fy), (fx, fy - 1), (fx + 1, fy), (fx, fy + 1)] {
+          if is_set(nx, ny) && !visited.has(nx, ny) {
+            visited.add(nx, ny);
+            frontier.push((nx, ny));
+          }
+        }
+      }
+      groups += 1;
+    };
+
+    for y in 0..=127 {
+      for x in 0..=127 {
+        visit(x, y);
+      }
+    }
+
+    Ok(groups)
   }
 }
 
