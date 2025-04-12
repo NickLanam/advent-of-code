@@ -1,16 +1,15 @@
 use advent_lib::runner::{Day, PartId};
 use anyhow::Result;
-use std::fmt::Write;
 
 type P1Out = u64;
 type P2Out = String;
 type Parsed = Vec<u8>;
 
-fn knot_rounds(buffer: &mut [u8], in_bytes: &[u8], rounds: usize) {
+fn knot_rounds(buffer: &mut [u8], key: &[u8], rounds: usize) {
   let len = buffer.len();
   let mut cursor: usize = 0;
   for r in 0..rounds {
-    for (i, &window_u8) in in_bytes.iter().enumerate() {
+    for (i, &window_u8) in key.iter().enumerate() {
       let window = window_u8 as usize;
 
       // Reverse the target section by walking outside-in
@@ -26,9 +25,23 @@ fn knot_rounds(buffer: &mut [u8], in_bytes: &[u8], rounds: usize) {
       }
 
       // Move the cursor
-      cursor = (cursor + window + i + (in_bytes.len() * r)) % len;
+      cursor = (cursor + window + i + (key.len() * r)) % len;
     }
   }
+}
+
+fn knot_hash(key: &[u8]) -> u128 {
+  let mut knot: Vec<u8> = (0_u8..=255).collect();
+  knot_rounds(&mut knot, key, 64);
+  let hash = knot.chunks_exact(16).fold(0_u128, |mut out, bytes| {
+    out <<= 8;
+    for byte in bytes {
+      out ^= (*byte as u128) & 0xff;
+    }
+    out
+  });
+
+  hash
 }
 
 struct Solver {}
@@ -49,27 +62,17 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     }
   }
 
-  fn part1(&self, in_bytes: &Parsed, sample_name: Option<String>) -> Result<P1Out> {
+  fn part1(&self, key: &Parsed, sample_name: Option<String>) -> Result<P1Out> {
     let len = if sample_name.is_some() { 4 } else { 255 };
     let mut buffer: Vec<u8> = (0..=len).collect();
-    knot_rounds(&mut buffer, in_bytes, 1);
+    knot_rounds(&mut buffer, key, 1);
 
     Ok((buffer[0] as u64) * (buffer[1] as u64))
   }
 
-  fn part2(&self, in_bytes: &Parsed, _: Option<String>) -> Result<P2Out> {
-    let mut buffer: Vec<u8> = (0..=255).collect();
-    knot_rounds(&mut buffer, in_bytes, 64);
-
-    Ok(
-      buffer
-        .chunks_exact(16)
-        .fold(String::with_capacity(32), |mut out, chunk| {
-          let v: u8 = chunk.iter().fold(0x00, |a, b| a ^ b);
-          let _ = write!(out, "{v:02x}");
-          out
-        }),
-    )
+  fn part2(&self, key: &Parsed, _: Option<String>) -> Result<P2Out> {
+    let hash = knot_hash(key);
+    Ok(format!("{hash:032x}"))
   }
 }
 
