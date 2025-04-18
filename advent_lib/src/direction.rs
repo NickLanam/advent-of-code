@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use anyhow::bail;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Rotation {
   L = -1,
   R = 1,
@@ -13,7 +13,7 @@ impl Display for Rotation {
   }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum CardinalDirection {
   N,
   E,
@@ -61,19 +61,19 @@ impl TryFrom<CardinalDirection> for u8 {
   }
 }
 
-impl std::ops::Add<&Rotation> for CardinalDirection {
+impl std::ops::Add<Rotation> for CardinalDirection {
   type Output = CardinalDirection;
 
-  fn add(self, rhs: &Rotation) -> Self::Output {
+  fn add(self, rhs: Rotation) -> Self::Output {
     match rhs {
       Rotation::L => ((self as u8 + 3) % 4).try_into().unwrap(),
       Rotation::R => ((self as u8 + 1) % 4).try_into().unwrap(),
     }
   }
 }
-impl std::ops::AddAssign<&Rotation> for CardinalDirection {
-  fn add_assign(&mut self, rhs: &Rotation) {
-    let v: u8 = self.clone().try_into().unwrap();
+impl std::ops::AddAssign<Rotation> for CardinalDirection {
+  fn add_assign(&mut self, rhs: Rotation) {
+    let v: u8 = *self as u8;
     *self = match rhs {
       Rotation::L => ((v + 3) % 4).try_into().unwrap(),
       Rotation::R => ((v + 1) % 4).try_into().unwrap(),

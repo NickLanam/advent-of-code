@@ -95,12 +95,25 @@ pub trait Day<
 
     let load_input = |name: String| -> Result<Vec<String>> {
       let path = workspace_root.join(format!("{year}/input/day{day:0>2}.{name}.txt"));
-      let out = fs::read_to_string(&path)
+      let mut out = fs::read_to_string(&path)
         .context("Failed to read input named {name}")?
-        .trim()
         .split('\n')
         .map(|s| s.to_string())
         .collect::<Vec<String>>();
+
+      // Some puzzles have a blank line in the middle,
+      // and some have meaningful leading whitespace.
+      // Instead of trimming those, only remove blank
+      // lines from the beginning and end of the file.
+      // THOSE are never part of the puzzle (at least
+      // for the first ten years of Advent of Code).
+      // TODO: When let-chaining stabilizes, make a better condition check here.
+      while !out.is_empty() && out.last().unwrap().is_empty() {
+        out.pop();
+      }
+      while !out.is_empty() && out.first().unwrap().is_empty() {
+        out.remove(0);
+      }
       Ok(out)
     };
 

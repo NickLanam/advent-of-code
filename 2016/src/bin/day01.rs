@@ -35,7 +35,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
     for (r, dist) in steps {
-      dir += r;
+      dir += *r;
       (x, y) = dir.apply(x, y, *dist as i32);
     }
     Ok((x.abs() + y.abs()) as u64)
@@ -53,7 +53,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
     for (r, dist) in steps {
-      dir += r;
+      dir += *r;
       let (tx, ty) = dir.apply(x, y, *dist as i32);
       let dx = (tx - x).signum();
       let dy = (ty - y).signum();
