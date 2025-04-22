@@ -125,3 +125,11 @@ impl<V: Clone> Infinite2dGrid<V> {
     })
   }
 }
+
+impl<V: Clone> Clone for Infinite2dGrid<V> {
+  fn clone(&self) -> Self {
+    Self {
+      state: self.state.clone(),
+    }
+  }
+}
