@@ -13,6 +13,7 @@ pub fn from_key(k: u64) -> (i32, i32) {
   (x as i32, y as i32)
 }
 
+#[derive(Clone, PartialEq)]
 pub struct Infinite2dSet {
   state: HashSet<u64, FnvBuildHasher>,
 }
@@ -59,11 +60,15 @@ impl Infinite2dSet {
   }
 }
 
-pub struct Infinite2dGrid<V> {
+#[derive(Clone, PartialEq)]
+pub struct Infinite2dGrid<V>
+where
+  V: Clone + PartialEq,
+{
   state: HashMap<u64, V, FnvBuildHasher>,
 }
 
-impl<V: Clone> Infinite2dGrid<V> {
+impl<V: Clone + PartialEq> Infinite2dGrid<V> {
   pub fn new(capacity: usize) -> Infinite2dGrid<V> {
     Infinite2dGrid {
       state: HashMap::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
@@ -123,13 +128,5 @@ impl<V: Clone> Infinite2dGrid<V> {
       let (x, y) = from_key(*k);
       (x, y, v)
     })
-  }
-}
-
-impl<V: Clone> Clone for Infinite2dGrid<V> {
-  fn clone(&self) -> Self {
-    Self {
-      state: self.state.clone(),
-    }
   }
 }

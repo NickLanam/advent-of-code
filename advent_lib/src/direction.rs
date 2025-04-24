@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use anyhow::bail;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Rotation {
   L = -1,
   R = 1,
@@ -13,7 +13,7 @@ impl Display for Rotation {
   }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum CardinalDirection {
   N,
   E,
