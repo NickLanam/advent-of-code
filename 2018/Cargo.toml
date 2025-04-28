@@ -1,0 +1,12 @@
+[package]
+name = "advent_of_code_2018"
+description = "Advent of Code solutions for 2018"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+advent_lib = { workspace = true }
+anyhow = { workspace = true }
+fnv = "1.0.7"
+regex = "1.11.1"

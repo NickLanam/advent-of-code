@@ -1,5 +1,5 @@
 use fnv::FnvBuildHasher;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, hash_map::Entry};
 
 pub fn to_key(x: i32, y: i32) -> u64 {
   let xu = x as u32;
@@ -121,6 +121,10 @@ impl<V: Clone + PartialEq> Infinite2dGrid<V> {
 
   pub fn values(&self) -> impl Iterator<Item = &V> {
     self.state.values()
+  }
+
+  pub fn entry(&mut self, x: i32, y: i32) -> Entry<'_, u64, V> {
+    self.state.entry(to_key(x, y))
   }
 
   pub fn entries(&self) -> impl Iterator<Item = (i32, i32, &V)> {
