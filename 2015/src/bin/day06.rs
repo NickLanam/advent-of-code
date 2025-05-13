@@ -82,7 +82,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               grid.remove(x, y);
             }
             CommandKind::On => {
-              grid.add(x, y);
+              grid.insert(x, y);
             }
             CommandKind::Toggle => {
               grid.toggle(x, y);

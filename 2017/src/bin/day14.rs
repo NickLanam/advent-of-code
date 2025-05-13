@@ -91,14 +91,14 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     };
 
     let mut visit = |x: i32, y: i32| {
-      if !is_set(x, y) || visited.has(x, y) {
+      if !is_set(x, y) || visited.contains(x, y) {
         return;
       }
       let mut frontier: Vec<(i32, i32)> = vec![(x, y)];
       while let Some((fx, fy)) = frontier.pop() {
         for (nx, ny) in [(fx - 1, fy), (fx, fy - 1), (fx + 1, fy), (fx, fy + 1)] {
-          if is_set(nx, ny) && !visited.has(nx, ny) {
-            visited.add(nx, ny);
+          if is_set(nx, ny) && !visited.contains(nx, ny) {
+            visited.insert(nx, ny);
             frontier.push((nx, ny));
           }
         }

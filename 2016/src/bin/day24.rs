@@ -30,7 +30,7 @@ fn distance_matrix(
     let (ux, uy) = frontier.pop_front().unwrap();
     let du = *dist.get(ux, uy).unwrap() + 1;
     for (nx, ny) in [(ux, uy - 1), (ux + 1, uy), (ux, uy + 1), (ux - 1, uy)] {
-      if nodes.has(nx, ny) {
+      if nodes.contains(nx, ny) {
         let dn = *dist.get(nx, ny).unwrap_or(&usize::MAX);
         if du < dn {
           dist.set(nx, ny, du);
@@ -123,7 +123,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         if c != '#' {
           let x2 = x as i32;
           let y2 = y as i32;
-          nodes.add(x2, y2);
+          nodes.insert(x2, y2);
           if c.is_ascii_digit() {
             targets.insert(c, (x2, y2));
           }

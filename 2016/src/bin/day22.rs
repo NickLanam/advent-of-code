@@ -97,7 +97,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut walls: Infinite2dSet = Infinite2dSet::new(nodes.len());
     for node in nodes {
       if node.used > goal_size * 2 || node.size < goal_size {
-        walls.add(node.x, node.y);
+        walls.insert(node.x, node.y);
       }
     }
 
@@ -112,7 +112,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               '!'
             } else if x == w - 1 && y == 0 {
               'G'
-            } else if walls.has(x, y) {
+            } else if walls.contains(x, y) {
               '#'
             } else if x == initial_empty_x && y == initial_empty_y {
               '_'

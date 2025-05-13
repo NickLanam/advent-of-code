@@ -89,13 +89,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       // This is very slow: 6 milliseconds for my input.
       let mut area = 1;
       let mut explored: Infinite2dSet = Infinite2dSet::new(4);
-      explored.add(x, y);
+      explored.insert(x, y);
       let mut frontier: Vec<(i32, i32)> = vec![(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)];
       while let Some((fx, fy)) = frontier.pop() {
-        if explored.has(fx, fy) {
+        if explored.contains(fx, fy) {
           continue;
         }
-        explored.add(fx, fy);
+        explored.insert(fx, fy);
         let dist_to_source = fx.abs_diff(x) + fy.abs_diff(y);
         if !other_points
           .iter()

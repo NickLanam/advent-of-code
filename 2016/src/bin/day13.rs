@@ -50,9 +50,9 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       if x == goal.0 && y == goal.1 {
         return Ok(depth);
       }
-      seen.add(x, y);
+      seen.insert(x, y);
       for (nx, ny) in [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)] {
-        if nx >= 0 && ny >= 0 && !seen.has(nx, ny) {
+        if nx >= 0 && ny >= 0 && !seen.contains(nx, ny) {
           let is_wall = wall_test(*seed, &mut walls, x, y);
           if !is_wall {
             edges.push_back((depth + 1, nx, ny));
@@ -69,7 +69,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut walls = Infinite2dGrid::<bool>::new(capacity);
 
     let mut seen = Infinite2dSet::new(capacity);
-    seen.add(1, 1);
+    seen.insert(1, 1);
 
     let mut edges = VecDeque::from([(0_u64, 1_i32, 1_i32)]);
 
@@ -79,10 +79,10 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         continue;
       }
       for (nx, ny) in [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)] {
-        if nx >= 0 && ny >= 0 && !seen.has(nx, ny) {
+        if nx >= 0 && ny >= 0 && !seen.contains(nx, ny) {
           let is_wall = wall_test(*seed, &mut walls, x, y);
           if !is_wall {
-            seen.add(x, y);
+            seen.insert(x, y);
             edges.push_back((depth + 1, nx, ny));
           }
         }

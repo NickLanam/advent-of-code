@@ -61,10 +61,10 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       while x != tx || y != ty {
         x += dx;
         y += dy;
-        if seen.has(x, y) {
+        if seen.contains(x, y) {
           return Ok((x.abs() + y.abs()) as u64);
         } else {
-          seen.add(x, y);
+          seen.insert(x, y);
         }
       }
     }

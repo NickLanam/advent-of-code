@@ -33,11 +33,11 @@ impl Infinite2dSet {
     self.state.is_empty()
   }
 
-  pub fn has(&self, x: i32, y: i32) -> bool {
+  pub fn contains(&self, x: i32, y: i32) -> bool {
     self.state.contains(&to_key(x, y))
   }
 
-  pub fn add(&mut self, x: i32, y: i32) -> bool {
+  pub fn insert(&mut self, x: i32, y: i32) -> bool {
     self.state.insert(to_key(x, y))
   }
 
