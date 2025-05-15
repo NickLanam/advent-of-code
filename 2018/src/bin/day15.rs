@@ -156,17 +156,19 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               path.len()
             );
 
-            if target_positions
-              .iter()
-              .any(|&(tx, ty)| tx == px && ty == py)
-            {
-              println!("  Can move to ({px},{py})");
-              units.entry(original_unit.id).and_modify(|u| {
-                u.x = px;
-                u.y = py;
-              });
-              anything_happened = true;
-              break 'bfs;
+            if let Some(&(fx, fy)) = path.get(1) {
+              if target_positions
+                .iter()
+                .any(|&(tx, ty)| tx == px && ty == py)
+              {
+                println!("  I see a path to ({px},{py}). Taking the first step to ({fx},{fy}).");
+                units.entry(original_unit.id).and_modify(|u| {
+                  u.x = fx;
+                  u.y = fy;
+                });
+                anything_happened = true;
+                break 'bfs;
+              }
             }
 
             // In reading order: north, then west, then east, then south
@@ -181,7 +183,6 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
                 frontier.push_back(new_path);
               }
             }
-
             frontier = VecDeque::from(
               frontier
                 .iter()
@@ -237,6 +238,9 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         for unit in units.values() {
           println!("  {unit:?}");
         }
+        // TODO: 288015 is too high for my input. I get the correct answer for the sample,
+        //  and the first few moves look right, so I likely did something wrong with the
+        //  tiebreaking logic?
         return Ok(round * units.values().map(|u| u.hp as usize).sum::<usize>());
       }
     }
