@@ -8,7 +8,7 @@ use anyhow::{Result, bail};
 use fnv::FnvHashMap;
 use itertools::Itertools;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct Unit {
   id: usize,
   is_elf: bool,
@@ -16,6 +16,20 @@ struct Unit {
   y: i32,
   hp: u8,
   ap: u8,
+}
+impl std::fmt::Display for Unit {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "{} #{:<2} {:>3}{} @ ({:>2},{:>2})",
+      if self.is_elf { "E" } else { "G" },
+      self.id,
+      self.hp,
+      if self.hp > 0 { "♥" } else { "✕" },
+      self.x,
+      self.y
+    )
+  }
 }
 
 type P1Out = usize;
@@ -92,7 +106,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       'round: for id in turn_order {
         // Without cloning, we would borrow both mutably and immutably.
         let original_unit = units.get(&id).unwrap().clone();
-        println!("Round {round}, check unit {original_unit:?}");
+        println!("Round {round}, check unit {original_unit}");
         if original_unit.hp == 0 {
           continue 'round;
         }
@@ -117,26 +131,31 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             (other.x, other.y + 1),
           ] {
             if !walls.contains(tx, ty)
-              && !units.values().any(
-                |Unit {
-                   id, x: ux, y: uy, ..
-                 }| *id != original_unit.id && *ux == tx && *uy == ty,
-              )
+              && !units
+                .values()
+                .any(|other| other.id != original_unit.id && other.x == tx && other.y == ty)
             {
               // Duplicates slow us down here, but not as much
               // as using a hashset for such a small list would.
-              println!("  Could target position ({tx},{ty})");
+              // println!("  Could target position ({tx},{ty})");
               target_positions.push((tx, ty));
             }
           }
         }
+        if target_positions.is_empty() {
+          println!("  No reachable positions to attack from. Cannot move.");
+        }
 
         // 2. If we are not already in an attack position, try to move towards one.
-        if !target_positions
-          .iter()
-          .any(|(tx, ty)| *tx == original_unit.x && *ty == original_unit.y)
+        if !target_positions.is_empty()
+          && !target_positions
+            .iter()
+            .any(|(tx, ty)| *tx == original_unit.x && *ty == original_unit.y)
         {
-          println!("  Not in an attack position, try moving towards one");
+          println!(
+            "  Not in an attack position, try moving towards one of the {} options",
+            target_positions.len()
+          );
           // Breadth-first search, making sure to push_back coordinates in reading order.
           // In order to satisfy the oddly specific rules about target selection, we also
           // have to do a sort after each step of BFS (of items that are already mostly
@@ -150,11 +169,11 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
           'bfs: while let Some(path) = frontier.pop_front() {
             let &(px, py) = path.last().unwrap();
-            println!(
-              "  Frontier has {} items. Extend ({px},{py}) w/ len={}",
-              frontier.len(),
-              path.len()
-            );
+            // println!(
+            //   "  Frontier has {} items. Extend ({px},{py}) w/ len={}",
+            //   frontier.len(),
+            //   path.len()
+            // );
 
             if let Some(&(fx, fy)) = path.get(1) {
               if target_positions
@@ -175,7 +194,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             for (nx, ny) in [(px, py - 1), (px - 1, py), (px + 1, py), (px, py + 1)] {
               if !seen.contains(nx, ny)
                 && !walls.contains(nx, ny)
-                && !enemies.iter().any(|e| e.x == nx && e.y == ny)
+                && !units.values().any(|e| e.hp > 0 && e.x == nx && e.y == ny)
               {
                 let mut new_path = path.clone();
                 seen.insert(nx, ny);
@@ -209,7 +228,6 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
           .iter()
           .find(|(tx, ty)| *tx == updated_unit.x && *ty == updated_unit.y)
         {
-          println!("  Can attack from ({tx},{ty})");
           let target_unit = units
             .values()
             .filter(|e| {
@@ -223,7 +241,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             .next();
           if let Some(target_unit) = target_unit {
             let ap = updated_unit.ap;
-            println!("  Deal {ap} damage to {target_unit:?}");
+            println!("  From ({tx},{ty}), deal {ap} damage to {target_unit}");
             units.entry(target_unit.id).and_modify(|t| {
               t.hp = t.hp.saturating_sub(ap);
             });
@@ -234,13 +252,12 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
       // Game ends when nothing happens in a round.
       if !anything_happened {
-        println!("GAME COMPLETED AFTER {round} FULL ROUNDS. SURVIVING UNITS:\n");
+        println!("\nGAME COMPLETED AFTER {round} FULL ROUNDS. SURVIVING UNITS:");
         for unit in units.values() {
-          println!("  {unit:?}");
+          println!("  {unit}");
         }
-        // TODO: 288015 is too high for my input. I get the correct answer for the sample,
-        //  and the first few moves look right, so I likely did something wrong with the
-        //  tiebreaking logic?
+        // TODO: 229680 is too high for my input. It's also my last chance to know if too high/low.
+        // I get the correct answer for the sample, and the first few moves look right, so I likely did something wrong with the tiebreaking logic?
         return Ok(round * units.values().map(|u| u.hp as usize).sum::<usize>());
       }
     }
