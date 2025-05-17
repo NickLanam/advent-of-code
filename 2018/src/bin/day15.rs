@@ -17,26 +17,13 @@ struct Unit {
   hp: u8,
   ap: u8,
 }
-impl std::fmt::Display for Unit {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(
-      f,
-      "{} #{:<2} {:>3}{} @ ({:>2},{:>2})",
-      if self.is_elf { "E" } else { "G" },
-      self.id,
-      self.hp,
-      if self.hp > 0 { "♥" } else { "✕" },
-      self.x,
-      self.y
-    )
-  }
-}
 
 fn simulate(
   w: usize,
   h: usize,
   walls: &Infinite2dSet,
   units: &mut FnvHashMap<usize, Unit>,
+  fail_if_elves_die: bool,
 ) -> Result<usize> {
   for round in 0.. {
     let mut anything_happened = false;
@@ -81,7 +68,6 @@ fn simulate(
           {
             // Duplicates slow us down here, but not as much
             // as using a hashset for such a small list would.
-            // if do_log { println!("  Could target position ({tx},{ty})"); }
             target_positions.push((tx, ty));
           }
         }
@@ -133,15 +119,16 @@ fn simulate(
               frontier.push_back(new_path);
             }
           }
+          // Doing this, with the list already mostly-sorted, guarantees
+          // that we meet all of the reading-order requirements for movement.
+          // By chance, the only scenario where this makes a difference for me
+          // is part 2's real input. None of the six samples, for either part,
+          // get a different answer with or without this, and my real part 1
+          // input also doesn't need it. ONLY my real part 2 input changes.
           frontier = VecDeque::from(
             frontier
               .iter()
               .sorted_by(|a, b| {
-                // Sort not by length, but by reading order of the edge node.
-                // This deals with a specific nuance of the puzzle's rules,
-                // and actually finds a _less_ optimal solution than not doing it!
-                // The order is already nearly correct, so this isn't as expensive
-                // as it looks.
                 let (ax, ay) = a.last().unwrap();
                 let (bx, by) = b.last().unwrap();
                 a.len().cmp(&b.len()).then(ay.cmp(by)).then(ax.cmp(bx))
@@ -171,10 +158,17 @@ fn simulate(
           .sorted_by(|a, b| a.hp.cmp(&b.hp).then(a.y.cmp(&b.y)).then(a.x.cmp(&b.x)))
           .next();
         if let Some(target_unit) = target_unit {
+          let mut elves_lose = false;
           let ap = updated_unit.ap;
           units.entry(target_unit.id).and_modify(|t| {
+            if fail_if_elves_die && t.is_elf && t.hp <= ap {
+              elves_lose = true;
+            }
             t.hp = t.hp.saturating_sub(ap);
           });
+          if elves_lose {
+            bail!("Elves lose, because any of them dying is a failure condition");
+          }
           anything_happened = true;
         }
       }
@@ -189,7 +183,7 @@ fn simulate(
 }
 
 type P1Out = usize;
-type P2Out = u64;
+type P2Out = usize;
 // (width, height, walls, initial_units)
 type Parsed = (usize, usize, Infinite2dSet, Vec<Unit>);
 
@@ -242,13 +236,27 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       units.insert(unit.id, unit.clone());
     }
 
-    simulate(*w, *h, walls, &mut units)
+    simulate(*w, *h, walls, &mut units, false)
   }
 
-  fn part2(&self, _lines: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    // TODO: Increment the elves' attack power by 1 (all of them at once)
-    // until a simulation results in none of them dying, and return that score.
-    Ok(1)
+  fn part2(&self, (w, h, walls, in_units): &Parsed, _: Option<String>) -> Result<P2Out> {
+    for elven_ap in 4.. {
+      let mut units: FnvHashMap<usize, Unit> = FnvHashMap::default();
+      for unit in in_units {
+        if !unit.is_elf {
+          units.insert(unit.id, unit.clone());
+        } else {
+          let mut empowered_elf = unit.clone();
+          empowered_elf.ap = elven_ap;
+          units.insert(unit.id, empowered_elf);
+        }
+      }
+
+      if let Ok(score) = simulate(*w, *h, walls, &mut units, true) {
+        return Ok(score);
+      }
+    }
+    bail!("Limitless power was not enough. Is a goblin hiding in a box?");
   }
 }
 
