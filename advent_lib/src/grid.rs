@@ -55,7 +55,7 @@ impl Infinite2dSet {
     }
   }
 
-  pub fn keys(&mut self) -> impl Iterator<Item = (i32, i32)> + use<'_> {
+  pub fn keys(&self) -> impl Iterator<Item = (i32, i32)> + use<'_> {
     self.state.iter().map(|k| from_key(*k))
   }
 }
