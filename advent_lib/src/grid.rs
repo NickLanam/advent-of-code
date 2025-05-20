@@ -133,4 +133,12 @@ impl<V: Clone + PartialEq> Infinite2dGrid<V> {
       (x, y, v)
     })
   }
+
+  pub fn len(&self) -> usize {
+    self.state.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.state.is_empty()
+  }
 }
