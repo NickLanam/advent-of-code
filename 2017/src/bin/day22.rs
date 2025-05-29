@@ -25,7 +25,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     for (y, line) in lines.iter().enumerate() {
       for (x, ch) in line.chars().enumerate() {
         if ch == '#' {
-          grid.set(x as i32, y as i32, Cell::Infected);
+          grid.insert(x as i32, y as i32, Cell::Infected);
         }
       }
     }
@@ -42,10 +42,10 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     for _ in 0..10_000 {
       if let Some(Cell::Infected) = grid.get(x, y) {
         d += Rotation::R;
-        grid.set(x, y, Cell::Clean);
+        grid.insert(x, y, Cell::Clean);
       } else {
         d += Rotation::L;
-        grid.set(x, y, Cell::Infected);
+        grid.insert(x, y, Cell::Infected);
         score += 1;
       }
       (x, y) = d.apply(x, y, 1);
@@ -70,15 +70,15 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       match grid.get(x, y) {
         None | Some(Cell::Clean) => {
           d += Rotation::L;
-          grid.set(x, y, Cell::Weakened);
+          grid.insert(x, y, Cell::Weakened);
         }
         Some(Cell::Weakened) => {
-          grid.set(x, y, Cell::Infected);
+          grid.insert(x, y, Cell::Infected);
           score += 1;
         }
         Some(Cell::Infected) => {
           d += Rotation::R;
-          grid.set(x, y, Cell::Flagged);
+          grid.insert(x, y, Cell::Flagged);
         }
         Some(Cell::Flagged) => {
           // Reverse by turning twice

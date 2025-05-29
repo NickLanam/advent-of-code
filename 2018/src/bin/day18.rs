@@ -59,7 +59,7 @@ fn solve(in_grid: &Infinite2dGrid<Cell>, rounds: usize) -> Result<usize> {
   while round < rounds {
     let mut next_grid = Infinite2dGrid::new(in_grid.len());
     'entries: for (x, y, c) in grid.entries() {
-      next_grid.set(x, y, c.clone()); // By default, things don't change
+      next_grid.insert(x, y, c.clone()); // By default, things don't change
       let neighbors = [
         (x - 1, y - 1),
         (x, y - 1),
@@ -77,7 +77,7 @@ fn solve(in_grid: &Infinite2dGrid<Cell>, rounds: usize) -> Result<usize> {
             if let Some(Cell::Tree) = grid.get(nx, ny) {
               trees += 1;
               if trees >= 3 {
-                next_grid.set(x, y, Cell::Tree);
+                next_grid.insert(x, y, Cell::Tree);
                 continue 'entries;
               }
             }
@@ -89,7 +89,7 @@ fn solve(in_grid: &Infinite2dGrid<Cell>, rounds: usize) -> Result<usize> {
             if let Some(Cell::Lumberyard) = grid.get(nx, ny) {
               lumberyards += 1;
               if lumberyards >= 3 {
-                next_grid.set(x, y, Cell::Lumberyard);
+                next_grid.insert(x, y, Cell::Lumberyard);
                 continue 'entries;
               }
             }
@@ -109,7 +109,7 @@ fn solve(in_grid: &Infinite2dGrid<Cell>, rounds: usize) -> Result<usize> {
               continue 'entries;
             }
           }
-          next_grid.set(x, y, Cell::Open);
+          next_grid.insert(x, y, Cell::Open);
         }
       }
     }
@@ -158,13 +158,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         let xx = x as i32;
         match ch {
           '.' => {
-            grid.set(xx, yy, Cell::Open);
+            grid.insert(xx, yy, Cell::Open);
           }
           '|' => {
-            grid.set(xx, yy, Cell::Tree);
+            grid.insert(xx, yy, Cell::Tree);
           }
           '#' => {
-            grid.set(xx, yy, Cell::Lumberyard);
+            grid.insert(xx, yy, Cell::Lumberyard);
           }
           _ => {
             bail!("Unrecognized character at ({x},{y}): {ch}");

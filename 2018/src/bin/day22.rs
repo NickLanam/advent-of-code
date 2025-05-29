@@ -74,7 +74,7 @@ impl ClimbingMap {
             unreachable!()
           }
         };
-        map.set(x, y, Tile { erosion, tile_type });
+        map.insert(x, y, Tile { erosion, tile_type });
       }
     }
 

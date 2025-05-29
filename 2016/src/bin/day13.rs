@@ -9,7 +9,7 @@ type P2Out = u64;
 type Parsed = u64;
 
 fn wall_test(seed: u64, walls: &mut Infinite2dGrid<bool>, x: i32, y: i32) -> bool {
-  *walls.get_or_set_default(x, y, || {
+  *walls.get_or_insert_with(x, y, || {
     let xx = x as u64;
     let yy = y as u64;
     let cmp: u64 = (3 * xx) + (2 * xx * yy) + (xx * xx) + (yy * yy) + yy + seed;

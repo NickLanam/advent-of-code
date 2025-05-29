@@ -22,7 +22,7 @@ fn distance_matrix(
   (start_x, start_y): (i32, i32),
 ) -> Infinite2dGrid<usize> {
   let mut dist: Infinite2dGrid<usize> = Infinite2dGrid::new(w * h);
-  dist.set(start_x, start_y, 0);
+  dist.insert(start_x, start_y, 0);
 
   // Discover nodes we can reach and memorize the distance to each.
   let mut frontier: VecDeque<(i32, i32)> = VecDeque::from([(start_x, start_y)]);
@@ -33,7 +33,7 @@ fn distance_matrix(
       if nodes.contains(nx, ny) {
         let dn = *dist.get(nx, ny).unwrap_or(&usize::MAX);
         if du < dn {
-          dist.set(nx, ny, du);
+          dist.insert(nx, ny, du);
           frontier.push_back((nx, ny));
         }
       }

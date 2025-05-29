@@ -49,7 +49,7 @@ fn traverse(map: &mut Infinite2dGrid<Room>, x: i32, y: i32, dir: char) -> Result
 
 fn build_map(path_pattern: &str) -> Result<Infinite2dGrid<Room>> {
   let mut map: Infinite2dGrid<Room> = Infinite2dGrid::new(path_pattern.len());
-  map.set(0, 0, Default::default());
+  map.insert(0, 0, Default::default());
 
   let mut frontier: Vec<(i32, i32)> = vec![(0, 0)];
   let mut stack: Vec<(Vec<(i32, i32)>, Infinite2dSet)> = vec![];

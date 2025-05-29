@@ -80,7 +80,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
     // This sequence grows so fast that we compute only a tiny number of terms
     let mut memory = Infinite2dGrid::<u32>::new(50);
-    memory.set(0, 0, 1);
+    memory.insert(0, 0, 1);
 
     let mut i = 0;
     let mut j = 0;
@@ -99,7 +99,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               }
             }
           }
-          memory.set(i, j, next);
+          memory.insert(i, j, next);
         }
       }
     }

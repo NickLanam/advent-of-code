@@ -112,7 +112,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
               if prev <= 1 {
                 grid.remove(x, y);
               } else {
-                grid.set(x, y, prev - 1);
+                grid.insert(x, y, prev - 1);
               }
             }
             CommandKind::On => {

@@ -152,22 +152,22 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         let x = xx as i32;
         match ch {
           '-' => {
-            grid.set(x, y, RailKind::Horizontal);
+            grid.insert(x, y, RailKind::Horizontal);
           }
           '|' => {
-            grid.set(x, y, RailKind::Vertical);
+            grid.insert(x, y, RailKind::Vertical);
           }
           '+' => {
-            grid.set(x, y, RailKind::Intersection);
+            grid.insert(x, y, RailKind::Intersection);
           }
           '/' => {
-            grid.set(x, y, RailKind::Slash);
+            grid.insert(x, y, RailKind::Slash);
           }
           '\\' => {
-            grid.set(x, y, RailKind::Backslash);
+            grid.insert(x, y, RailKind::Backslash);
           }
           '>' => {
-            grid.set(x, y, RailKind::Horizontal);
+            grid.insert(x, y, RailKind::Horizontal);
             carts.push(Cart {
               id: carts.len(),
               x,
@@ -177,7 +177,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             });
           }
           '<' => {
-            grid.set(x, y, RailKind::Horizontal);
+            grid.insert(x, y, RailKind::Horizontal);
             carts.push(Cart {
               id: carts.len(),
               x,
@@ -187,7 +187,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             });
           }
           '^' => {
-            grid.set(x, y, RailKind::Vertical);
+            grid.insert(x, y, RailKind::Vertical);
             carts.push(Cart {
               id: carts.len(),
               x,
@@ -197,7 +197,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             });
           }
           'v' => {
-            grid.set(x, y, RailKind::Vertical);
+            grid.insert(x, y, RailKind::Vertical);
             carts.push(Cart {
               id: carts.len(),
               x,

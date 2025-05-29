@@ -1,4 +1,4 @@
-use fnv::FnvBuildHasher;
+use fnv::{FnvBuildHasher, FnvHashMap};
 use std::collections::{HashMap, HashSet, hash_map::Entry};
 
 pub fn to_key(x: i32, y: i32) -> u64 {
@@ -71,11 +71,11 @@ where
 impl<V: Clone + PartialEq> Infinite2dGrid<V> {
   pub fn new(capacity: usize) -> Infinite2dGrid<V> {
     Infinite2dGrid {
-      state: HashMap::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
+      state: FnvHashMap::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
     }
   }
 
-  pub fn has(&self, x: i32, y: i32) -> bool {
+  pub fn contains_key(&self, x: i32, y: i32) -> bool {
     self.state.contains_key(&to_key(x, y))
   }
 
@@ -87,17 +87,17 @@ impl<V: Clone + PartialEq> Infinite2dGrid<V> {
     self.get(x, y).unwrap_or(default)
   }
 
-  pub fn get_or_set_default<F>(&mut self, x: i32, y: i32, create_default: F) -> &V
+  pub fn get_or_insert_with<F>(&mut self, x: i32, y: i32, create_default: F) -> &V
   where
     F: FnOnce() -> V,
   {
-    if !self.has(x, y) {
-      self.set(x, y, create_default());
-    }
-    self.get(x, y).unwrap()
+    self
+      .state
+      .entry(to_key(x, y))
+      .or_insert_with(create_default)
   }
 
-  pub fn set(&mut self, x: i32, y: i32, v: V) -> Option<V> {
+  pub fn insert(&mut self, x: i32, y: i32, v: V) -> Option<V> {
     self.state.insert(to_key(x, y), v)
   }
 
