@@ -1,10 +1,9 @@
 use advent_lib::runner::{Day, PartId};
-use anyhow::Result;
-use fnv::{FnvBuildHasher, FnvHashMap};
+use anyhow::{Context, Result};
 
 type P1Out = usize;
 type P2Out = i64;
-type Parsed = FnvHashMap<(i64, i64, i64), i64>;
+type Parsed = Vec<(i64, i64, i64, i64)>;
 
 struct Solver {}
 impl Day<Parsed, P1Out, P2Out> for Solver {
@@ -14,28 +13,26 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     _sample_name: Option<String>,
     _for_part: PartId,
   ) -> Result<Parsed> {
-    let mut out = FnvHashMap::with_capacity_and_hasher(lines.len(), FnvBuildHasher::default());
+    let mut out = Vec::with_capacity(lines.len());
     for line in lines {
-      let (left, r) = line[5..].split_once(">, r=").expect("Bad line");
-      let (x, yz) = left.split_once(",").unwrap();
-      let (y, z) = yz.split_once(",").unwrap();
-      out.insert((x.parse()?, y.parse()?, z.parse()?), r.parse()?);
+      let (left, r) = line[5..].split_once(">, r=").context("Bad line")?;
+      let (x, yz) = left.split_once(",").context("Can't extract coordinates")?;
+      let (y, z) = yz.split_once(",").context("Can't extract coordinates")?;
+      out.push((x.parse()?, y.parse()?, z.parse()?, r.parse()?));
     }
     Ok(out)
   }
 
   fn part1(&self, bots: &Parsed, _sample_name: Option<String>) -> Result<P1Out> {
-    let mut best_strength: usize = 0;
-    for ((x, y, z), r) in bots.iter() {
-      let mut strength = 0;
-      for ((x2, y2, z2), _r2) in bots.iter() {
-        if x.abs_diff(*x2) + y.abs_diff(*y2) + z.abs_diff(*z2) <= (*r as u64) {
-          strength += 1;
-        }
+    let &(lx, ly, lz, lr) = bots.iter().max_by_key(|&&(_, _, _, r)| r).unwrap();
+    let mut in_range: usize = 0;
+    for &(x, y, z, _r) in bots.iter() {
+      let d = (x.abs_diff(lx) + y.abs_diff(ly) + z.abs_diff(lz)) as i64;
+      if d <= lr {
+        in_range += 1;
       }
-      best_strength = best_strength.max(strength);
     }
-    Ok(best_strength)
+    Ok(in_range)
   }
 
   fn part2(&self, bots: &Parsed, sample_name: Option<String>) -> Result<P2Out> {
@@ -46,7 +43,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     println!("\nRUN: {sample_name:?}");
 
     let mut segments: Vec<(i64, i64)> = vec![];
-    for (&(x, y, z), &r) in bots.iter() {
+    for &(x, y, z, r) in bots {
       let d = x.abs() + y.abs() + z.abs();
       segments.push((0.max(d - r), 1));
       segments.push((d + r + 1, -1));
@@ -56,21 +53,20 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut max_count = 0;
     let mut result = 0;
     for (d, e) in segments {
-      if sample_name.is_some() {
-        println!("Popped {d}, {e}");
-      }
+      println!("Popped {d}, {e}");
       count += e;
       if count > max_count {
         result = d;
         max_count = count;
-      }
-      if sample_name.is_some() {
         println!("  result={result}, max_count={max_count}, count={count}");
       }
     }
     // 84_087_794 is too low, so that isn't it...
-    // Yet, getting the correct 36 for the given sample.
-    // Implication: reducing to one dimension isn't quite right after all?
+    // 84_087_817 is too high, which was the next node that was popped after the too low answer
+    // Meaning the correct answer is in a range of 23 values. I get the correct
+    // answer on the samples, so there's something slightly off with my input
+    // that makes the trick _almost_ but not quite work...
+    // 84_087_805 is "not right" (the midpoint), was hoping I'd get one more chance there.
     println!("FINAL  result={result}, max_count={max_count}, count={count}");
     Ok(result)
   }
