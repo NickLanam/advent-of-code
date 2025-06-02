@@ -1,13 +1,13 @@
 use advent_lib::runner::{Day, PartId};
 use anyhow::{Result, bail};
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq)]
 enum Team {
   ImmuneSystem,
   Infection,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct Group {
   id: usize,
   team: Team,
@@ -38,6 +38,14 @@ impl Group {
         damage *= 2;
       }
       (damage, damage / other.hp, damage >= other.hp * other.count)
+    }
+  }
+
+  fn effective_power(&self, boost: usize) -> usize {
+    if self.team == Team::ImmuneSystem {
+      self.count * (self.attack_damage + boost)
+    } else {
+      self.count * self.attack_damage
     }
   }
 }
@@ -74,7 +82,7 @@ fn target_phase(groups: &[Group], boost: usize) -> Result<Vec<(usize, usize)>> {
 
   for group in groups.iter() {
     let mut target_damage = 0;
-    let mut target_id: Option<usize> = None;
+    let mut target: Option<&Group> = None;
     for other in groups.iter() {
       // Do not attack one's own team, and no unit may be under attack by two others simultaneously,
       if other.team == group.team
@@ -86,13 +94,23 @@ fn target_phase(groups: &[Group], boost: usize) -> Result<Vec<(usize, usize)>> {
         continue;
       }
       let (total_damage, _units_killed, _is_fatal) = group.damage_to(other, boost);
-      if total_damage > target_damage {
+      let better: bool;
+      if let Some(target) = target {
+        better = total_damage
+          .cmp(&target_damage)
+          .then((other.effective_power(boost)).cmp(&(target.effective_power(boost))))
+          .then(other.initiative.cmp(&target.initiative))
+          .is_ge();
+      } else {
+        better = total_damage > target_damage;
+      }
+      if better {
         target_damage = total_damage;
-        target_id = Some(other.id);
+        target = Some(other);
       }
     }
-    if let Some(target_id) = target_id {
-      pairs.push((group.id, target_id));
+    if let Some(target) = target {
+      pairs.push((group.id, target.id));
     }
   }
 
@@ -102,6 +120,7 @@ fn target_phase(groups: &[Group], boost: usize) -> Result<Vec<(usize, usize)>> {
 fn solve(in_groups: &[Group], boost: usize) -> Result<(Team, usize)> {
   let mut groups: Vec<Group> = in_groups.to_vec();
 
+  let mut prev_survivors = 0;
   loop {
     // Remove dead groups and exit if the game has ended
     groups.retain(|g| g.count > 0);
@@ -114,8 +133,8 @@ fn solve(in_groups: &[Group], boost: usize) -> Result<(Team, usize)> {
     // Units take turns, schoolyard style, picking who to attack.
     // Highest effective power (tiebreak: highest initiative) goes first.
     groups.sort_by(|a, b| {
-      (b.count * b.attack_damage)
-        .cmp(&(a.count * a.attack_damage))
+      b.effective_power(boost)
+        .cmp(&(a.effective_power(boost)))
         .then(b.initiative.cmp(&a.initiative))
     });
     let target_id_pairs = target_phase(&groups, boost)?;
@@ -142,6 +161,15 @@ fn solve(in_groups: &[Group], boost: usize) -> Result<(Team, usize)> {
           }
         }
       }
+    }
+
+    // Check for a stalemate, abort if it happens
+    let survivors: usize = groups.iter().map(|g| g.count).sum();
+    if survivors == prev_survivors {
+      // Stalemate. For part 2's control flow, pretend the infection wins with no survivors.
+      return Ok((Team::Infection, 0));
+    } else {
+      prev_survivors = survivors;
     }
   }
 }
@@ -222,30 +250,16 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     while min_boost <= max_boost {
       let boost = min_boost + ((max_boost - min_boost) / 2);
       let (team, survivors) = solve(in_groups, boost)?;
-      println!("TEST: at boost={boost}, {team:?} wins with {survivors} units remaining.");
       if team == Team::Infection {
         min_boost = boost + 1;
       } else {
         max_boost = boost - 1;
       }
+      if max_boost < min_boost {
+        return Ok(survivors);
+      }
     }
-
-    // Verify that the answer made sense before returning it.
-    let (team, survivors) = solve(in_groups, min_boost)?;
-    if team == Team::ImmuneSystem {
-      println!("Solution had a boost value of {min_boost}");
-      // TODO: Part 1 works, but this gets 32 instead of 51 on the sample, which means there's a subtle
-      // issue somewhere, likely with a tiebreaker?
-      println!(
-        "Out of curiosity, boost level 1570 gets {:?}",
-        solve(in_groups, 1570)
-      );
-      Ok(survivors)
-    } else {
-      bail!(
-        "Minimum boost of {min_boost} got a win for {team:?} w/ {survivors}, binary search was wrong!"
-      );
-    }
+    bail!("Failed to find a solution");
   }
 }
 
