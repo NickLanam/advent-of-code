@@ -19,7 +19,6 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
   fn part2(&self, init: &Parsed, _: Option<String>) -> Result<P2Out> {
     let out = execute(init, &[5])?;
-    // println!("Part2 output: {out:#?}");
     Ok(*out.outputs.last().unwrap())
   }
 }
