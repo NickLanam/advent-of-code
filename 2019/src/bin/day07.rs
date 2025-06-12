@@ -51,6 +51,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
   }
 
   fn part2(&self, _init: &Parsed, _: Option<String>) -> Result<P2Out> {
+    // TODO: Now, they gets IDs 5, 6, 7, 8, 9,
+    //  and they stall waiting for inputs in a loop
+    //  (A waits for input from E).
+    //  Stop when all five have halted, and the final output of E
+    //  is the output of the whole cluster.
+    //  As with part 1, we're looking for the highest final output
+    //  from E based on permutations of the input IDs 5..=9.
     Ok(0)
   }
 }

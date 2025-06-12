@@ -60,7 +60,12 @@ fn duration_string(duration: Duration) -> String {
   }
 }
 
-type Sample = (String, Vec<String>, Vec<String>, Vec<String>);
+pub struct Sample {
+  name: String,
+  lines: Vec<String>,
+  expect_lines_1: Option<Vec<String>>,
+  expect_lines_2: Option<Vec<String>>,
+}
 
 pub trait Day<
   Parsed,
@@ -130,17 +135,22 @@ pub trait Day<
         let file_name = String::from(f.file_name().to_str().unwrap());
         if let Some(caps) = re.captures(file_name.as_str()) {
           let name = caps.name("name").unwrap().as_str().to_string();
-          let sample = load_input(format!("{name}.sample"))?;
-          let p1expect = load_input(format!("{name}.expect.1"))?;
-          let p2expect = load_input(format!("{name}.expect.2"))?;
+          let lines = load_input(format!("{name}.sample"))?;
+          let expect_lines_1 = load_input(format!("{name}.expect.1")).ok();
+          let expect_lines_2 = load_input(format!("{name}.expect.2")).ok();
 
-          Ok((name, sample, p1expect, p2expect))
+          Ok(Sample {
+            name,
+            lines,
+            expect_lines_1,
+            expect_lines_2,
+          })
         } else {
           bail!("That isn't a sample file");
         }
       })
       .filter_map(|r| r.ok())
-      .collect::<Vec<(String, Vec<String>, Vec<String>, Vec<String>)>>();
+      .collect::<Vec<Sample>>();
 
     let real_lines = load_input("real".to_string())?;
 
@@ -160,27 +170,30 @@ pub trait Day<
 
     // Check that part 1 passes all samples. If it does, run it on the real input.
     let mut part1_test_failures = 0;
-    for (sample_name, sample_lines, expect1_lines, _) in sample_files.iter() {
+    for Sample {
+      name,
+      lines,
+      expect_lines_1,
+      ..
+    } in sample_files.iter()
+    {
+      if expect_lines_1.is_none() {
+        continue;
+      }
       let parsed = &self
-        .parse(
-          sample_lines.clone(),
-          Some(sample_name.to_string()),
-          PartId::P1,
-        )
-        .with_context(|| format!("Parsing error for sample {sample_name}"))?;
+        .parse(lines.clone(), Some(name.to_string()), PartId::P1)
+        .with_context(|| format!("Parsing error for sample {name}"))?;
       let out = &self
-        .part1(parsed, Some(sample_name.to_string()))
-        .with_context(|| {
-          format!(" {RED}✕ {RESET}Part 1 error on sample {YELLOW}{sample_name}{RESET}")
-        })?;
+        .part1(parsed, Some(name.to_string()))
+        .with_context(|| format!(" {RED}✕ {RESET}Part 1 error on sample {YELLOW}{name}{RESET}"))?;
       let out_string = out.to_string();
-      let expect_string = expect1_lines.join("\n");
+      let expect_string = expect_lines_1.to_owned().unwrap().join("\n");
       if out_string == expect_string {
         // TODO: some test_only flag that renders this line and skips running against real
         // println!(" {GREEN}✓ {RESET}Part 1 test {YELLOW}{sample_name}{RESET} {GREEN}passed{RESET}");
       } else {
         eprintln!(
-          " {RED}✕ {RESET}Part 1 test {YELLOW}{sample_name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}"
+          " {RED}✕ {RESET}Part 1 test {YELLOW}{name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}"
         );
         part1_test_failures += 1;
       }
@@ -208,27 +221,30 @@ pub trait Day<
 
     // Same process for part 2.
     let mut part2_test_failures = 0;
-    for (sample_name, sample_lines, _, expect2_lines) in sample_files.iter() {
+    for Sample {
+      name,
+      lines,
+      expect_lines_2,
+      ..
+    } in sample_files.iter()
+    {
+      if expect_lines_2.is_none() {
+        continue;
+      }
       let parsed = &self
-        .parse(
-          sample_lines.clone(),
-          Some(sample_name.to_string()),
-          PartId::P2,
-        )
-        .with_context(|| format!("Parsing error for sample {sample_name}"))?;
+        .parse(lines.clone(), Some(name.to_string()), PartId::P2)
+        .with_context(|| format!("Parsing error for sample {name}"))?;
       let out = &self
-        .part2(parsed, Some(sample_name.to_string()))
-        .with_context(|| {
-          format!(" {RED}✕ {RESET}Part 2 error on sample {YELLOW}{sample_name}{RESET}")
-        })?;
+        .part2(parsed, Some(name.to_string()))
+        .with_context(|| format!(" {RED}✕ {RESET}Part 2 error on sample {YELLOW}{name}{RESET}"))?;
       let out_string = out.to_string();
-      let expect_string = expect2_lines.join("\n");
+      let expect_string = expect_lines_2.to_owned().unwrap().join("\n");
       if out_string == expect_string {
         // TODO: some test_only flag that renders this line and skips running against real
-        // println!(" {GREEN}✓ {RESET}Part 2 test {YELLOW}{sample_name}{RESET} {GREEN}passed{RESET}");
+        // println!(" {GREEN}✓ {RESET}Part 2 test {YELLOW}{name}{RESET} {GREEN}passed{RESET}");
       } else {
         eprintln!(
-          " {RED}✕ {RESET}Part 2 test {YELLOW}{sample_name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}"
+          " {RED}✕ {RESET}Part 2 test {YELLOW}{name}{RESET} {RED}failed{RESET}\n   {GREEN}Expected: {RESET}{expect_string}\n   {RED}Received: {RESET}{out_string}"
         );
         part2_test_failures += 1;
       }
