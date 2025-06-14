@@ -205,12 +205,13 @@ fn get_instruction(tape: &[i64], pc: usize) -> Result<Instruction> {
 pub struct Execution {
   pub final_tape: Vec<i64>,
   pub outputs: Vec<i64>,
+  pub pc: usize,
 }
-pub fn execute(initial_tape: &[i64], inputs: &[i64]) -> Result<Execution> {
+pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Result<Execution> {
   let mut tape = initial_tape.to_owned();
   let mut outputs = vec![];
   let mut input_reader = inputs.iter();
-  let mut pc = 0;
+  let mut pc = in_pc.unwrap_or(0);
 
   while pc < tape.len() {
     // Cant' do this in advance, as instructions can modify each other.
@@ -227,12 +228,17 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64]) -> Result<Execution> {
         pc += instruction.size;
       }
       ParsedInstruction::Input(addr) => {
-        let next_input = *input_reader
-          .next()
-          .context("Ran out of inputs, but another was requested")?;
+        let next_input = input_reader.next();
+        if let Some(&next_input) = next_input {
+          tape[addr] = next_input;
+          pc += instruction.size;
+        } else if in_pc.is_none() {
+          // Determines if pausing midway to wait for input is okay.
+          bail!("Tape tried to read more inputs than were given");
+        } else {
+          break;
+        }
         // println!("  Input {next_input} to address {addr}");
-        tape[addr] = next_input;
-        pc += instruction.size;
       }
       ParsedInstruction::Output(a) => {
         // println!("  Output {a} to outputs array");
@@ -290,5 +296,6 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64]) -> Result<Execution> {
   Ok(Execution {
     final_tape: tape,
     outputs,
+    pc,
   })
 }

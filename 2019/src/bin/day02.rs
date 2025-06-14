@@ -11,7 +11,7 @@ fn run(init: &[i64], reg1: i64, reg2: i64) -> Result<i64> {
   program[1] = reg1;
   program[2] = reg2;
 
-  let out = execute(&program, &[])?;
+  let out = execute(&program, &[], None)?;
   Ok(out.final_tape[0])
 }
 

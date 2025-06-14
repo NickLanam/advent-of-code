@@ -16,31 +16,31 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut best = i64::MIN;
     for a_id in [0_i64, 1, 2, 3, 4] {
       let a_in = [a_id, 0];
-      let a_res = execute(init, &a_in)?;
+      let a_res = execute(init, &a_in, None)?;
       for b_id in [0_i64, 1, 2, 3, 4] {
         if b_id == a_id {
           continue;
         }
         let b_in = [b_id, a_res.outputs[0]];
-        let b_res = execute(init, &b_in)?;
+        let b_res = execute(init, &b_in, None)?;
         for c_id in [0_i64, 1, 2, 3, 4] {
           if c_id == b_id || c_id == a_id {
             continue;
           }
           let c_in = [c_id, b_res.outputs[0]];
-          let c_res = execute(init, &c_in)?;
+          let c_res = execute(init, &c_in, None)?;
           for d_id in [0_i64, 1, 2, 3, 4] {
             if d_id == c_id || d_id == b_id || d_id == a_id {
               continue;
             }
             let d_in = [d_id, c_res.outputs[0]];
-            let d_res = execute(init, &d_in)?;
+            let d_res = execute(init, &d_in, None)?;
             for e_id in [0_i64, 1, 2, 3, 4] {
               if e_id == d_id || e_id == c_id || e_id == b_id || e_id == a_id {
                 continue;
               }
               let e_in = [e_id, d_res.outputs[0]];
-              let e_res = execute(init, &e_in)?;
+              let e_res = execute(init, &e_in, None)?;
               best = best.max(e_res.outputs[0]);
             }
           }
