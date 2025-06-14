@@ -1,6 +1,7 @@
 use advent_lib::runner::{Day, PartId};
-use advent_of_code_2019::intcode::execute;
+use advent_of_code_2019::intcode::{Execution, execute};
 use anyhow::Result;
+use itertools::Itertools;
 
 type P1Out = i64;
 type P2Out = i64;
@@ -14,51 +15,41 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
   fn part1(&self, init: &Parsed, _: Option<String>) -> Result<P1Out> {
     let mut best = i64::MIN;
-    for a_id in [0_i64, 1, 2, 3, 4] {
-      let a_in = [a_id, 0];
-      let a_res = execute(init, &a_in, None)?;
-      for b_id in [0_i64, 1, 2, 3, 4] {
-        if b_id == a_id {
-          continue;
-        }
-        let b_in = [b_id, a_res.outputs[0]];
-        let b_res = execute(init, &b_in, None)?;
-        for c_id in [0_i64, 1, 2, 3, 4] {
-          if c_id == b_id || c_id == a_id {
-            continue;
-          }
-          let c_in = [c_id, b_res.outputs[0]];
-          let c_res = execute(init, &c_in, None)?;
-          for d_id in [0_i64, 1, 2, 3, 4] {
-            if d_id == c_id || d_id == b_id || d_id == a_id {
-              continue;
-            }
-            let d_in = [d_id, c_res.outputs[0]];
-            let d_res = execute(init, &d_in, None)?;
-            for e_id in [0_i64, 1, 2, 3, 4] {
-              if e_id == d_id || e_id == c_id || e_id == b_id || e_id == a_id {
-                continue;
-              }
-              let e_in = [e_id, d_res.outputs[0]];
-              let e_res = execute(init, &e_in, None)?;
-              best = best.max(e_res.outputs[0]);
-            }
-          }
-        }
+    for permutation in (0_i64..=4).permutations(5) {
+      let mut last_out = 0;
+      for id in permutation {
+        let input = [id, last_out];
+        let res = execute(init, &input, None)?;
+        last_out = res.outputs[0];
       }
+      best = best.max(last_out);
     }
     Ok(best)
   }
 
-  fn part2(&self, _init: &Parsed, _: Option<String>) -> Result<P2Out> {
-    // TODO: Now, they gets IDs 5, 6, 7, 8, 9,
-    //  and they stall waiting for inputs in a loop
-    //  (A waits for input from E).
-    //  Stop when all five have halted, and the final output of E
-    //  is the output of the whole cluster.
-    //  As with part 1, we're looking for the highest final output
-    //  from E based on permutations of the input IDs 5..=9.
-    Ok(0)
+  fn part2(&self, init: &Parsed, _: Option<String>) -> Result<P2Out> {
+    let mut best = i64::MIN;
+    for permutation in (5_i64..=9).permutations(5) {
+      // First, get the runners started
+      let mut runners: Vec<Execution> = vec![];
+      for id in permutation {
+        let input = [id];
+        let res = execute(init, &input, Some(0))?;
+        runners.push(res);
+      }
+
+      // Now, run them in their feedback loop until the last one halts.
+      let mut last_out = 0;
+      while !runners.last().unwrap().halted {
+        for runner in runners.iter_mut() {
+          let input = [last_out];
+          *runner = execute(&runner.final_tape, &input, Some(runner.pc))?;
+          last_out = runner.outputs[0];
+        }
+      }
+      best = best.max(last_out);
+    }
+    Ok(best)
   }
 }
 

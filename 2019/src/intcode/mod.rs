@@ -206,12 +206,14 @@ pub struct Execution {
   pub final_tape: Vec<i64>,
   pub outputs: Vec<i64>,
   pub pc: usize,
+  pub halted: bool,
 }
 pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Result<Execution> {
   let mut tape = initial_tape.to_owned();
   let mut outputs = vec![];
   let mut input_reader = inputs.iter();
   let mut pc = in_pc.unwrap_or(0);
+  let mut halted = false;
 
   while pc < tape.len() {
     // Cant' do this in advance, as instructions can modify each other.
@@ -233,9 +235,12 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
           tape[addr] = next_input;
           pc += instruction.size;
         } else if in_pc.is_none() {
-          // Determines if pausing midway to wait for input is okay.
+          // When in_pc is None, we don't want yielding behavior.
           bail!("Tape tried to read more inputs than were given");
         } else {
+          // Yield: returns the current state (including pc) so that
+          // the program can be resumed with more inputs later.
+          halted = false;
           break;
         }
         // println!("  Input {next_input} to address {addr}");
@@ -285,6 +290,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::Halt => {
         // println!("  HALT INSTRUCTION");
+        halted = true;
         break;
       }
     }
@@ -297,5 +303,6 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
     final_tape: tape,
     outputs,
     pc,
+    halted,
   })
 }

@@ -97,6 +97,7 @@ dependencies = [
  "advent_lib",
  "anyhow",
  "fnv",
+ "itertools",
 ]
 
 [[package]]
