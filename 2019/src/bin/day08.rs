@@ -11,7 +11,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     Ok(lines[0].to_string())
   }
 
-  fn part1(&self, input: &Parsed, _sample_name: Option<String>) -> Result<P1Out> {
+  fn part1(&self, input: &Parsed, _: Option<String>) -> Result<P1Out> {
     let w = 25;
     let h = 6;
     let lim = w * h;
@@ -50,36 +50,46 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     Ok(score)
   }
 
-  fn part2(&self, _lines: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    /*
+  fn part2(&self, input: &Parsed, _: Option<String>) -> Result<P2Out> {
     let w = 25;
     let h = 6;
-    let mut layers: Vec<Vec<Vec<u8>>> = vec![];
-    layers.push(Vec::with_capacity(h));
-    for ch in lines[0].chars() {
-      let layer = layers.last().unwrap();
-    }
-    let mut out = Vec::with_capacity(h);
-    out.push(Vec::with_capacity(w));
-    let mut y = 0;
+
+    let mut image: Vec<Vec<char>> = vec![vec!['2'; 25]; 6];
+
     let mut x = 0;
-    for ch in lines[0].chars() {
-      let v: u8 = match ch {
-        '0' => 0,
-        '1' => 1,
-        '2' => 2,
-        _ => bail!("Unrecognized char '{ch}' in input stream"),
-      };
-      if x == w {
-        out.push(Vec::with_capacity(w));
-        x = 0;
+    let mut y = 0;
+    for ch in input.chars() {
+      if x >= w {
         y += 1;
+        x = 0;
       }
-      out[y].push(v);
+      if y >= h {
+        y = 0;
+      }
+      match ch {
+        '0' | '1' => {
+          image[y][x] = if image[y][x] == '2' { ch } else { image[y][x] };
+        }
+        '2' => {
+          // Transparent, so nothing happens
+        }
+        _ => bail!("Unreachable"),
+      }
       x += 1;
     }
-    Ok(out)
-    */
+    for row in image {
+      for ch in row {
+        print!(
+          "{}",
+          match ch {
+            '0' => ' ',
+            '1' => '#',
+            _ => '!',
+          }
+        );
+      }
+      println!();
+    }
     Ok(0)
   }
 }
