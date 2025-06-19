@@ -1,6 +1,6 @@
 use advent_lib::runner::{Day, PartId};
 use advent_of_code_2019::intcode::execute;
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 type P1Out = i64;
 type P2Out = i64;
@@ -19,17 +19,8 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
   }
 
   fn part2(&self, init: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
-    let inputs = [5];
+    let inputs = [2];
     let res = execute(init, &inputs, None)?;
-    if res.outputs.len() != 1 {
-      println!("{res:?}");
-      // TODO: I get the correct answer for part 1, after fixing a 203 error.
-      // However for part 2, I still get a 203 error.
-      // This is after making sure days 2, 5, and 7 still get correct answers, so
-      // making a commit at this point in this known-mostly-good state and picking
-      // it up tomorrow...
-      bail!("Bad result for part 2");
-    }
     Ok(res.outputs[0])
   }
 }

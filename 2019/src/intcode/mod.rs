@@ -28,6 +28,12 @@ fn read_parameter(
   want_address: bool,
 ) -> Result<i64> {
   let imm = *tape.get(pos).unwrap_or(&0);
+  if mode == 2 && offset + imm < 0 {
+    bail!(
+      "Mode 2, offset={offset}, imm={imm}, would try to go to {}",
+      offset + imm
+    );
+  }
   if want_address {
     // "Parameters than an instruction writes to will never be in immediate mode".
     // In fact, they'll return the address instead of following it, so that it
@@ -244,7 +250,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
     match instruction.action {
       ParsedInstruction::Add(a, b, dest) => {
         if DEBUGGING_EXECUTION {
-          println!("  ADD {a}+{b} -> dest={dest}");
+          println!("  ADD, @{dest} = {a} + {b} = {}", a + b);
         }
         if tape.len() <= dest {
           tape.resize(dest + 1, 0);
@@ -254,7 +260,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::Mul(a, b, dest) => {
         if DEBUGGING_EXECUTION {
-          println!("  MUL {a}*{b} -> dest={dest}");
+          println!("  MUL, @{dest} = {a} * {b} = {}", a * b);
         }
         if tape.len() <= dest {
           tape.resize(dest + 1, 0);
@@ -266,7 +272,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
         let next_input = input_reader.next();
         if let Some(&next_input) = next_input {
           if DEBUGGING_EXECUTION {
-            println!("  INPUT {next_input} to dest={addr} (pc={pc}, ro={ro}, raw={instruction:?})");
+            println!("  INPUT {next_input} to @{addr}");
           }
           if tape.len() <= addr {
             tape.resize(addr + 1, 0);
@@ -280,7 +286,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
           // Yield: returns the current state (including pc) so that
           // the program can be resumed with more inputs later.
           if DEBUGGING_EXECUTION {
-            println!("  YIELD at pc={pc}, ro={ro}, waiting for input ({instruction:?})");
+            println!("  YIELD");
           }
           halted = false;
           break;
@@ -296,10 +302,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::JumpIfTrue(a, dest) => {
         if DEBUGGING_EXECUTION {
-          println!(
-            "  If {a}!=0, jump to {dest}, else just go to {}",
-            pc + instruction.size
-          );
+          println!("  JNZ {a}, @{dest}, else @{}", pc + instruction.size);
         }
         if a != 0 {
           if dest >= tape.len() {
@@ -312,10 +315,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::JumpIfFalse(a, dest) => {
         if DEBUGGING_EXECUTION {
-          println!(
-            "  If {a}==0, jump to {dest}, else just go to {}",
-            pc + instruction.size
-          );
+          println!("  JEZ {a}, @{dest}, else @{}", pc + instruction.size);
         }
         if a == 0 {
           if dest >= tape.len() {
@@ -328,7 +328,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::LessThan(a, b, dest) => {
         if DEBUGGING_EXECUTION {
-          println!("  Set {dest} = if {a} < {b} then 1 else 0");
+          println!("  @{dest} = {a} < {b} -> {}", if a < b { 1 } else { 0 });
         }
         if tape.len() <= dest {
           tape.resize(dest + 1, 0);
@@ -338,7 +338,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::Equals(a, b, dest) => {
         if DEBUGGING_EXECUTION {
-          println!("  Set {dest} = if {a} == {b} then 1 else 0");
+          println!("  @{dest} = {a} == {b} -> {}", if a == b { 1 } else { 0 });
         }
         if tape.len() <= dest {
           tape.resize(dest + 1, 0);
@@ -358,7 +358,7 @@ pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Re
       }
       ParsedInstruction::Halt => {
         if DEBUGGING_EXECUTION {
-          println!("  HALT INSTRUCTION");
+          println!("  HALT");
         }
         halted = true;
         break;
