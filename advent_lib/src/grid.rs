@@ -25,6 +25,24 @@ impl Infinite2dSet {
     }
   }
 
+  pub fn from_input_lines(lines: &[String], transformer: impl Fn(char) -> bool) -> Infinite2dSet {
+    assert!(
+      !lines.is_empty(),
+      "Infinite2dSet::from_input_lines expects at least one line"
+    );
+    let h = lines.len();
+    let w = lines[0].len();
+    let mut set = Infinite2dSet::new(w * h);
+    for (y, row) in lines.iter().enumerate() {
+      for (x, c) in row.chars().enumerate() {
+        if transformer(c) {
+          set.insert(x as i32, y as i32);
+        }
+      }
+    }
+    set
+  }
+
   pub fn len(&self) -> usize {
     self.state.len()
   }
@@ -73,6 +91,22 @@ impl<V: Clone + PartialEq> Infinite2dGrid<V> {
     Infinite2dGrid {
       state: FnvHashMap::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
     }
+  }
+
+  pub fn from_input_lines(lines: &[String], transformer: impl Fn(char) -> V) -> Infinite2dGrid<V> {
+    assert!(
+      !lines.is_empty(),
+      "Infinite2dGrid::from_input_lines expects at least one line"
+    );
+    let h = lines.len();
+    let w = lines[0].len();
+    let mut grid = Infinite2dGrid::new(w * h);
+    for (y, row) in lines.iter().enumerate() {
+      for (x, c) in row.chars().enumerate() {
+        grid.insert(x as i32, y as i32, transformer(c));
+      }
+    }
+    grid
   }
 
   pub fn contains_key(&self, x: i32, y: i32) -> bool {
