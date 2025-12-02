@@ -160,8 +160,8 @@ fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
       format!(
         "{RED}{:0>2}:{:0>2}:{:0>2}{RESET}",
         delta.num_hours(),
-        delta.num_minutes() - (delta.num_hours() * 60),
-        delta.num_seconds() - (delta.num_minutes() * 60) - (delta.num_hours() * 60 * 60)
+        delta.num_minutes() % 60,
+        delta.num_seconds() % 60
       )
     } else {
       format!("{} days", delta.num_days())
@@ -176,7 +176,6 @@ fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
       now_ms = Utc::now().timestamp_millis();
       remain_ms = unlock_ms - now_ms;
       s = fancy_duration(remain_ms);
-      // remain_ms = unlock_ms - now_ms;
       println!(
         "{CLEAR_TO_START_OF_PREVIOUS_LINE}{RED} ✕{RESET} Waiting until puzzle unlocks in {s}"
       );
