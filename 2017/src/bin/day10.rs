@@ -33,15 +33,14 @@ fn knot_rounds(buffer: &mut [u8], key: &[u8], rounds: usize) {
 fn knot_hash(key: &[u8]) -> u128 {
   let mut knot: Vec<u8> = (0_u8..=255).collect();
   knot_rounds(&mut knot, key, 64);
-  let hash = knot.chunks_exact(16).fold(0_u128, |mut out, bytes| {
+
+  knot.chunks_exact(16).fold(0_u128, |mut out, bytes| {
     out <<= 8;
     for byte in bytes {
       out ^= (*byte as u128) & 0xff;
     }
     out
-  });
-
-  hash
+  })
 }
 
 struct Solver {}

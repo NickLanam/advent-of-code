@@ -85,17 +85,11 @@ fn step(
     turn: turn + 1,
     player_hp: if turn % 2 == 0 {
       *player_hp + (if spell == Spell::Drain { 2 } else { 0 })
-    } else if damage_taken > *player_hp {
-      0
     } else {
-      *player_hp - damage_taken
+      (*player_hp).saturating_sub(damage_taken)
     },
     mana: available - cost,
-    boss_hp: if damage_done > *boss_hp {
-      0
-    } else {
-      *boss_hp - damage_done
-    },
+    boss_hp: (*boss_hp).saturating_sub(damage_done),
     boss_damage: *boss_damage,
     shield_clock: if spell == Spell::Shield {
       6
@@ -228,12 +222,7 @@ fn solve(
 
 struct Solver {}
 impl Day<Parsed, P1Out, P2Out> for Solver {
-  fn parse(
-    &self,
-    lines: Vec<String>,
-    sample_name: Option<String>,
-    _for_part: PartId,
-  ) -> Result<Parsed> {
+  fn parse(&self, lines: Vec<String>, sample_name: Option<String>, _: PartId) -> Result<Parsed> {
     Ok(Parsed {
       player_hp: if sample_name.is_some() { 10 } else { 50 },
       player_mana: if sample_name.is_some() { 250 } else { 500 },

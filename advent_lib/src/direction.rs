@@ -9,7 +9,7 @@ pub enum Rotation {
 }
 impl Display for Rotation {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:#?}", self)
+    write!(f, "{self:#?}")
   }
 }
 
@@ -32,7 +32,7 @@ impl CardinalDirection {
 }
 impl Display for CardinalDirection {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:#?}", self)
+    write!(f, "{self:#?}")
   }
 }
 impl TryFrom<u8> for CardinalDirection {
