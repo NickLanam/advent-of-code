@@ -114,10 +114,10 @@ fn logs_to_schedule(logs: &[Log]) -> Result<FnvHashMap<u16, FnvHashMap<u8, usize
     }
   }
 
-  if let Some(g) = guard {
-    if let Some(since) = sleeping_since {
-      bail!("Guard {g} was still sleeping at the end, since {since:?}");
-    }
+  if let Some(g) = guard
+    && let Some(since) = sleeping_since
+  {
+    bail!("Guard {g} was still sleeping at the end, since {since:?}");
   }
   Ok(guards)
 }

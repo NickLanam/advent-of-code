@@ -93,18 +93,17 @@ fn simulate(
         'bfs: while let Some(path) = frontier.pop_front() {
           let &(px, py) = path.last().unwrap();
 
-          if let Some(&(fx, fy)) = path.get(1) {
-            if target_positions
+          if let Some(&(fx, fy)) = path.get(1)
+            && target_positions
               .iter()
               .any(|&(tx, ty)| tx == px && ty == py)
-            {
-              units.entry(original_unit.id).and_modify(|u| {
-                u.x = fx;
-                u.y = fy;
-              });
-              anything_happened = true;
-              break 'bfs;
-            }
+          {
+            units.entry(original_unit.id).and_modify(|u| {
+              u.x = fx;
+              u.y = fy;
+            });
+            anything_happened = true;
+            break 'bfs;
           }
 
           // In reading order: north, then west, then east, then south

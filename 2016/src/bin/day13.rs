@@ -14,7 +14,7 @@ fn wall_test(seed: u64, walls: &mut Infinite2dGrid<bool>, x: i32, y: i32) -> boo
     let yy = y as u64;
     let cmp: u64 = (3 * xx) + (2 * xx * yy) + (xx * xx) + (yy * yy) + yy + seed;
     let num_ones = cmp.count_ones();
-    num_ones % 2 != 0
+    !num_ones.is_multiple_of(2)
   })
 }
 

@@ -18,7 +18,7 @@ fn solve(in_target: usize) -> Result<usize> {
     if target == 1 {
       break;
     }
-    while target % i == 0 {
+    while target.is_multiple_of(i) {
       divisors.push(i);
       target /= i;
     }

@@ -7,6 +7,7 @@ type Parsed = i32;
 
 fn make_power_level_grid(serial: i32) -> [[i32; 300]; 300] {
   let mut grid = [[0_i32; 300]; 300];
+  #[allow(clippy::needless_range_loop)]
   for x in 0_usize..300 {
     let rack = (x as i32) + 11; // 10 but we're pretending we're 1-indexed
     #[allow(clippy::needless_range_loop)]

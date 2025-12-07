@@ -49,19 +49,19 @@ fn solve(instructions: &Parsed) -> Bins {
           to_remove.push(index);
         }
         Instruction::Give(src, dst_lo, dst_hi) => {
-          if let Some(entry) = bins.get(src) {
-            if entry.len() >= 2 {
-              let lo = entry.iter().min();
-              let hi = entry.iter().max();
-              if let (Some(lo), Some(hi)) = (lo, hi) {
-                // Have to explicitly clone these, otherwise
-                // we both immutable and mutable borrow bins.
-                let commit_lo = *lo;
-                let commit_hi = *hi;
-                push_to_bin(&mut bins, dst_lo, &commit_lo);
-                push_to_bin(&mut bins, dst_hi, &commit_hi);
-                to_remove.push(index);
-              }
+          if let Some(entry) = bins.get(src)
+            && entry.len() >= 2
+          {
+            let lo = entry.iter().min();
+            let hi = entry.iter().max();
+            if let (Some(lo), Some(hi)) = (lo, hi) {
+              // Have to explicitly clone these, otherwise
+              // we both immutable and mutable borrow bins.
+              let commit_lo = *lo;
+              let commit_hi = *hi;
+              push_to_bin(&mut bins, dst_lo, &commit_lo);
+              push_to_bin(&mut bins, dst_hi, &commit_hi);
+              to_remove.push(index);
             }
           }
         }

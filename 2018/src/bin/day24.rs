@@ -146,20 +146,15 @@ fn solve(in_groups: &[Group], boost: usize) -> Result<(Team, usize)> {
     // Have to iterate on IDs since we're mutating the list as we run through it
     let ids: Vec<usize> = groups.iter().map(|g| g.id).collect();
     for id in ids {
-      // TODO: When let-chaining lands in Rust 1.88 (likely), this gets much easier to read...
-      if let Some(&(_, defender_id)) = target_id_pairs.iter().find(|&&(a, _)| a == id) {
-        if let Some(attacker) = groups.iter().find(|g| g.id == id) {
-          if attacker.hp > 0 {
-            if let Some(defender_pos) = groups.iter().position(|g| g.id == defender_id) {
-              if groups[defender_pos].hp > 0 {
-                let (_total_damage, units_killed, _is_fatal) =
-                  attacker.damage_to(&groups[defender_pos], boost);
-                groups[defender_pos].count =
-                  groups[defender_pos].count.saturating_sub(units_killed);
-              }
-            }
-          }
-        }
+      if let Some(&(_, defender_id)) = target_id_pairs.iter().find(|&&(a, _)| a == id)
+        && let Some(attacker) = groups.iter().find(|g| g.id == id)
+        && attacker.hp > 0
+        && let Some(defender_pos) = groups.iter().position(|g| g.id == defender_id)
+        && groups[defender_pos].hp > 0
+      {
+        let (_total_damage, units_killed, _is_fatal) =
+          attacker.damage_to(&groups[defender_pos], boost);
+        groups[defender_pos].count = groups[defender_pos].count.saturating_sub(units_killed);
       }
     }
 

@@ -42,21 +42,21 @@ fn duration_string(duration: Duration) -> String {
   if duration.as_micros() < 1 {
     format!("{: >4}{CYAN}ns{RESET}", duration.subsec_nanos())
   } else if duration.as_millis() < 1 {
-    return format!("{: >4}{GREEN}µs{RESET}", duration.subsec_micros());
+    format!("{: >4}{GREEN}µs{RESET}", duration.subsec_micros())
   } else if duration.as_millis() <= 99 {
-    return format!(
+    format!(
       "{: >4.1}{BRIGHT_BLACK}ms{RESET}",
       (duration.subsec_micros() as f64) / 1_000.0
-    );
+    )
   } else if duration.as_millis() <= 999 {
-    return format!("{: >4}{BRIGHT_BLACK}ms{RESET}", duration.subsec_millis());
+    format!("{: >4}{BRIGHT_BLACK}ms{RESET}", duration.subsec_millis())
   } else if duration.as_secs() <= 9 {
-    return format!(
+    format!(
       "{: >3.1}{RED}sec{RESET}",
       (duration.as_millis() as f64) / 1_000.0
-    );
+    )
   } else {
-    return format!("{} {RED}seconds{RESET}", duration.as_secs());
+    format!("{} {RED}seconds{RESET}", duration.as_secs())
   }
 }
 

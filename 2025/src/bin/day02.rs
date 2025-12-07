@@ -8,7 +8,7 @@ type Parsed = Vec<(usize, usize)>;
 fn is_bad(i: usize) -> bool {
   let s = i.to_string();
   for l in 1..=(s.len() / 2) {
-    if l == 1 || s.len() % l == 0 {
+    if l == 1 || s.len().is_multiple_of(l) {
       let parts: Vec<String> = s
         .chars()
         .collect::<Vec<char>>()
