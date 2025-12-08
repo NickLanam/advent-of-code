@@ -106,6 +106,7 @@ version = "1.0.0"
 dependencies = [
  "advent_lib",
  "anyhow",
+ "fnv",
 ]
 
 [[package]]
