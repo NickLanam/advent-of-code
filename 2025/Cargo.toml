@@ -9,3 +9,4 @@ edition.workspace = true
 advent_lib = { workspace = true }
 anyhow = { workspace = true }
 fnv = "1.0.7"
+microlp = "0.2.11"
