@@ -29,8 +29,12 @@ pub fn setup(year: u16, day: u16, workspace_root: &Path) -> Result<()> {
     bail!("Advent of Code does not exist for the year {year}.");
   }
 
-  if !(1..=25).contains(&day) {
-    bail!("Advent of code runs from December 1 through December 25, not {day}.");
+  let final_puzzle_day = if year < 2025 { 25 } else { 12 };
+
+  if !(1..=final_puzzle_day).contains(&day) {
+    bail!(
+      "Advent of Code {year} runs from December 1 through December {final_puzzle_day}, not {day}."
+    );
   }
 
   let paths = get_relevant_paths(year, day, workspace_root);
@@ -58,7 +62,7 @@ pub fn setup(year: u16, day: u16, workspace_root: &Path) -> Result<()> {
     }),
     Box::new(|| {
       maybe_download_input(year, day, &paths)
-        .with_context(|| "Failed to download input for {year}-{day:0>2}")
+        .with_context(|| "Failed to download input for {year} day {day:0>2}")
     }),
   ];
 
