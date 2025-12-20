@@ -227,12 +227,17 @@ pub struct Execution {
 
 const DEBUGGING_EXECUTION: bool = false;
 
-pub fn execute(initial_tape: &[i64], inputs: &[i64], in_pc: Option<usize>) -> Result<Execution> {
+pub fn execute(
+  initial_tape: &[i64],
+  inputs: &[i64],
+  in_pc: Option<usize>,
+  in_ro: Option<i64>,
+) -> Result<Execution> {
   let mut tape = initial_tape.to_owned();
   let mut outputs = vec![];
   let mut input_reader = inputs.iter();
   let mut pc = in_pc.unwrap_or(0);
-  let mut ro = 0; // Relative offset, adjusted by instruction 9
+  let mut ro = in_ro.unwrap_or(0); // Relative offset, adjusted by instruction 9
   let mut halted = false;
 
   while pc < tape.len() {

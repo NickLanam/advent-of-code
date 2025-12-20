@@ -14,13 +14,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
 
   fn part1(&self, init: &Parsed, _: Option<String>) -> Result<P1Out> {
     let inputs = [1];
-    let res = execute(init, &inputs, None)?;
+    let res = execute(init, &inputs, None, None)?;
     Ok(res.outputs[0])
   }
 
   fn part2(&self, init: &Parsed, _sample_name: Option<String>) -> Result<P2Out> {
     let inputs = [2];
-    let res = execute(init, &inputs, None)?;
+    let res = execute(init, &inputs, None, None)?;
     Ok(res.outputs[0])
   }
 }

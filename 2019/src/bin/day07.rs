@@ -19,7 +19,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       let mut last_out = 0;
       for id in permutation {
         let input = [id, last_out];
-        let res = execute(init, &input, None)?;
+        let res = execute(init, &input, None, None)?;
         last_out = res.outputs[0];
       }
       best = best.max(last_out);
@@ -34,7 +34,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       let mut runners: Vec<Execution> = vec![];
       for id in permutation {
         let input = [id];
-        let res = execute(init, &input, Some(0))?;
+        let res = execute(init, &input, Some(0), None)?;
         runners.push(res);
       }
 
@@ -43,7 +43,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       while !runners.last().unwrap().halted {
         for runner in runners.iter_mut() {
           let input = [last_out];
-          *runner = execute(&runner.final_tape, &input, Some(runner.pc))?;
+          *runner = execute(&runner.final_tape, &input, Some(runner.pc), None)?;
           last_out = runner.outputs[0];
         }
       }
