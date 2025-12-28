@@ -7,6 +7,7 @@ type Parsed = Vec<i64>;
 
 const ROUNDS: usize = 100;
 
+// Only part 1 bothers to do this; part 2 skips it!
 fn round(line: &[i64]) -> Vec<i64> {
   let len = line.len();
   let mid = len / 2;
@@ -45,6 +46,13 @@ fn round(line: &[i64]) -> Vec<i64> {
   out
 }
 
+fn collect_result(line: &[i64]) -> usize {
+  line
+    .iter()
+    .take(8)
+    .fold(0, |acc, n| (acc * 10) + (n.abs() % 10) as usize)
+}
+
 struct Solver;
 impl Day<Parsed, P1Out, P2Out> for Solver {
   fn parse(&self, lines: Vec<String>, _: Option<String>, _: PartId) -> Result<Parsed> {
@@ -62,36 +70,38 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       line = round(&line);
     }
 
-    Ok(
-      line
-        .iter()
-        .take(8)
-        .fold(0, |acc, n| (acc * 10) + ((n.abs() % 10) as usize)),
-    )
+    Ok(collect_result(&line))
   }
 
   fn part2(&self, init: &Parsed, _: Option<String>) -> Result<P2Out> {
-    // There are much faster ways to do this which don't have to actually stretch the array,
-    // by noticing the pattern in triangular->tetrahedral numbers and only ever computing
-    // the 8 digits we're using (no need to calculate the rest)... but this is the first
-    // method that worked for me before looking up solutions so I'm committing it.
+    // Two observations that take this from 60sec town to 2.5sec then to 0.150sec:
+    // - The pattern works out that we're doing partial sums each round, and don't need
+    //   to run the provided round algorithm at all in part 2. That gets 60sec -> 2.5sec.
+    // - There's a triangle of 0s in the math, and a 7-digit offset... so we can skip
+    //   computing anything at all for #offset digits (2.5sec -> 0.150sec)
     let offset = init[0..7].iter().fold(0, |acc, n| (acc * 10) + n) as usize;
     let mut line = init
       .iter()
       .cycle()
       .take(init.len() * 10_000)
+      .skip(offset) // Order matters, here!
       .map(|&n| n)
       .collect::<Vec<i64>>();
+
     for _round in 1..=ROUNDS {
-      line = round(&line);
+      let mut sums = vec![0; line.len() + 1];
+      let mut total = 0;
+      for i in 0..line.len() {
+        total += line[i];
+        sums[i + 1] = total;
+      }
+
+      for i in 0..line.len() {
+        let value = total - sums[i];
+        line[i] = value % 10;
+      }
     }
-    Ok(
-      line
-        .iter()
-        .skip(offset)
-        .take(8)
-        .fold(0, |acc, n| (acc * 10) + ((n.abs() % 10) as usize)),
-    )
+    Ok(collect_result(&line))
   }
 }
 
