@@ -1,168 +1,86 @@
-use std::collections::VecDeque;
+use std::{
+  cmp::Reverse,
+  collections::{BinaryHeap, VecDeque},
+};
 
 use advent_lib::{
   grid::{Infinite2dGrid, Infinite2dSet},
   runner::{Day, PartId},
 };
-use anyhow::Result;
-use fnv::{FnvBuildHasher, FnvHashMap};
+use anyhow::{Result, bail};
+use fnv::{FnvBuildHasher, FnvHashSet};
 
 type P1Out = usize;
 type P2Out = usize;
 
+// To make later code legible. These are bitmaps.
+type Keys = u32;
+type Doors = u32;
+
 struct Parsed {
   start: (i32, i32),
   walls: Infinite2dSet,
-  key_pos: FnvHashMap<u8, (i32, i32)>,
-  pos_key: Infinite2dGrid<u8>,
-  #[allow(unused)]
-  door_pos: FnvHashMap<u8, (i32, i32)>,
-  pos_door: Infinite2dGrid<u8>,
+  keys: Infinite2dGrid<Keys>,
+  doors: Infinite2dGrid<Doors>,
 }
 
-// Computes reachable positions with a given position and set of held keys, including
-// how many steps it takes to reach each one. Used by search_outer to find valid moves.
-struct KeyMove {
-  key_id: u8,
-  key_x: i32,
-  key_y: i32,
-  cost: usize,
-}
-fn search_inner(
-  input: &Parsed,
-  held_keys: &Vec<u8>,
-  (start_x, start_y): (i32, i32),
-) -> Vec<KeyMove> {
-  let mut moves: Vec<KeyMove> = vec![];
-  let mut touched = Infinite2dSet::new(10);
-  let mut frontier: VecDeque<(i32, i32, usize)> = VecDeque::new();
-  frontier.push_back((start_x, start_y, 0));
+type Path = (usize, (i32, i32), Keys, Doors);
+fn find_paths(input: &Parsed, start: (i32, i32)) -> Vec<Path> {
+  let mut paths = vec![];
+  let mut seen = Infinite2dSet::new(10);
+  let mut frontier = VecDeque::new();
+  frontier.push_back((0, start, 0));
 
-  while let Some((fx, fy, cost)) = frontier.pop_front() {
-    if touched.contains(fx, fy) || input.walls.contains(fx, fy) {
-      touched.insert(fx, fy);
-      continue;
-    }
-    touched.insert(fx, fy);
-
-    // Found a key we don't have yet -> remember this for outer BFS
-    if let Some(&key_id) = input.pos_key.get(fx, fy)
-      && !held_keys.contains(&key_id)
-    {
-      moves.push(KeyMove {
-        key_id,
-        key_x: fx,
-        key_y: fy,
-        cost,
-      });
-      // Skip adding neighbors from here - we'll get keys after this one later
-      // (otherwise we'd have to account for moves that pick up one key on the way to another)
-      continue;
-    }
-
-    // Don't try to go through doors that we can't open
-    if let Some(&door_id) = input.pos_door.get(fx, fy)
-      && !held_keys.contains(&door_id)
-    {
-      continue;
-    }
-
-    // Explore neighbors
-    for (nx, ny) in [(fx, fy - 1), (fx + 1, fy), (fx, fy + 1), (fx - 1, fy)] {
-      frontier.push_back((nx, ny, cost + 1));
-    }
-  }
-
-  moves
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-struct SearchNode {
-  held_keys: Vec<u8>,
-  x: i32,
-  y: i32,
-}
-/// Dijkstra's to find a meta-path, discovering nodes along the way.
-/// Similar to about a dozen other Advent of Code puzzles, really.
-/// TODO: Still very slow to solve (minute or so), I need to cache
-/// the hot path and avoid duplicate explorations better
-fn search_outer(input: &Parsed) -> usize {
-  let mut frontier: Vec<SearchNode> = vec![SearchNode {
-    held_keys: Vec::with_capacity(26),
-    x: input.start.0,
-    y: input.start.1,
-  }];
-
-  let mut dist: FnvHashMap<SearchNode, usize> =
-    FnvHashMap::with_capacity_and_hasher(100, FnvBuildHasher::default());
-  let mut prev: FnvHashMap<SearchNode, SearchNode> =
-    FnvHashMap::with_capacity_and_hasher(100, FnvBuildHasher::default());
-
-  dist.insert(frontier[0].clone(), 0);
-
-  let mut best_goal = usize::MAX;
-
-  while !frontier.is_empty() {
-    let (min_index, _) = frontier
-      .iter()
-      .enumerate()
-      .min_by_key(|(_i, node)| dist.get(node).unwrap_or(&usize::MAX))
-      .unwrap();
-    let current = frontier.remove(min_index);
-
-    let current_cost = dist.get(&current).map(|&o| o);
-    // println!("search_outer: {current:?} costs {current_cost:?}");
-
-    for KeyMove {
-      key_id,
-      key_x,
-      key_y,
-      cost,
-    } in search_inner(input, &current.held_keys, (current.x, current.y))
-    {
-      let mut next_keys = current.held_keys.clone();
-      next_keys.push(key_id);
-      next_keys.sort(); // For stable checking - we don't ultimate care about the order
-
-      // Part 1 answer while we're here
-      if let Some(current_cost) = current_cost
-        && next_keys.len() == input.key_pos.len()
-      {
-        best_goal = best_goal.min(current_cost + cost);
-        continue; // No need to grab neighbors now
+  while let Some((cost, (fx, fy), doors_seen)) = frontier.pop_front() {
+    if seen.insert(fx, fy) {
+      if let Some(&key) = input.keys.get(fx, fy) {
+        paths.push((cost, (fx, fy), key, doors_seen));
       }
-
-      let next_node = SearchNode {
-        held_keys: next_keys,
-        x: key_x,
-        y: key_y,
-      };
-      if !frontier.contains(&next_node) {
-        frontier.push(next_node.clone()); // Discovering options along the way
-      }
-      let alt = dist
-        .get(&current)
-        .unwrap_or(&usize::MAX)
-        .saturating_add(cost);
-      // println!("  Next {next_node:?}, alt={alt}");
-      if alt < *dist.get(&next_node).unwrap_or(&usize::MAX) {
-        dist.insert(next_node.clone(), alt);
-        prev.insert(next_node.clone(), current.clone());
+      for (nx, ny) in [(fx, fy - 1), (fx + 1, fy), (fx, fy + 1), (fx - 1, fy)] {
+        if !input.walls.contains(nx, ny) {
+          frontier.push_back((
+            cost + 1,
+            (nx, ny),
+            doors_seen | input.doors.get(nx, ny).unwrap_or(&0),
+          ));
+        }
       }
     }
   }
 
-  /* Reconstructing, if part 2 asks for it:
-  S ← empty sequence
-  u ← target
-  if prev[u] is defined or u = source: // Proceed if the vertex is reachable
-      while u is defined:              // Construct the shortest path with a stack S
-          S.push(u)                    // Push the vertex onto the stack
-          u ← prev[u]                  // Traverse from target to source
-  */
+  return paths;
+}
 
-  // println!("\x1B[33mSolution: {best_goal}\x1B[0m");
-  best_goal
+fn solve_area(input: &Parsed) -> Result<usize> {
+  let mut path_cache: Infinite2dGrid<Vec<Path>> = Infinite2dGrid::new(10_000);
+  for (px, py) in input.keys.keys().chain([input.start].iter().cloned()) {
+    path_cache.insert(px, py, find_paths(input, (px, py)));
+  }
+
+  let mut frontier = BinaryHeap::new();
+  frontier.push(Reverse((0, input.start, 0)));
+
+  let mut seen =
+    FnvHashSet::<(i32, i32, Keys)>::with_capacity_and_hasher(10_000, FnvBuildHasher::default());
+
+  let all_keys = (1 << input.keys.len()) - 1;
+
+  while let Some(Reverse((cost, (rx, ry), held_keys))) = frontier.pop() {
+    if held_keys == all_keys {
+      return Ok(cost);
+    }
+    if seen.insert((rx, ry, held_keys))
+      && let Some(reachable) = path_cache.get(rx, ry)
+    {
+      for &(move_cost, (nx, ny), next_key, next_need) in reachable {
+        if (held_keys & next_key == 0) && (next_need & !held_keys == 0) {
+          frontier.push(Reverse((cost + move_cost, (nx, ny), held_keys | next_key)));
+        }
+      }
+    }
+  }
+
+  bail!("Failed to find a path that collects every key");
 }
 
 struct Solver;
@@ -170,23 +88,28 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
   fn parse(&self, lines: Vec<String>, _: Option<String>, _: PartId) -> Result<Parsed> {
     let mut walls = Infinite2dSet::new(lines.len() * lines[0].len() / 2);
     let mut start = (0, 0);
-    let mut key_pos = FnvHashMap::with_capacity_and_hasher(10, FnvBuildHasher::default());
-    let mut pos_key = Infinite2dGrid::new(10);
-    let mut door_pos = FnvHashMap::with_capacity_and_hasher(10, FnvBuildHasher::default());
-    let mut pos_door = Infinite2dGrid::new(10);
+    let mut keys = Infinite2dGrid::new(26);
+    let mut doors = Infinite2dGrid::new(26);
 
     for (y, line) in lines.iter().enumerate() {
       for (x, c) in line.chars().enumerate() {
-        if c.is_ascii_lowercase() {
-          key_pos.insert((c as u8) - ('a' as u8), (x as i32, y as i32));
-          pos_key.insert(x as i32, y as i32, (c as u8) - ('a' as u8));
-        } else if c.is_ascii_uppercase() {
-          door_pos.insert((c as u8) - ('A' as u8), (x as i32, y as i32));
-          pos_door.insert(x as i32, y as i32, (c as u8) - ('A' as u8));
-        } else if c == '#' {
-          walls.insert(x as i32, y as i32);
-        } else if c == '@' {
-          start = (x as i32, y as i32);
+        match c {
+          '#' => {
+            walls.insert(x as i32, y as i32);
+          }
+          '@' => {
+            start = (x as i32, y as i32);
+          }
+          '.' => {}
+          c if c.is_ascii_lowercase() => {
+            let key_id = 1_u32 << ((c as u8) - b'a');
+            keys.insert(x as i32, y as i32, key_id);
+          }
+          c if c.is_ascii_uppercase() => {
+            let door_id = 1_u32 << ((c as u8) - b'A');
+            doors.insert(x as i32, y as i32, door_id);
+          }
+          _ => bail!("Can't parse character: {c}"),
         }
       }
     }
@@ -194,21 +117,19 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     Ok(Parsed {
       start,
       walls,
-      key_pos,
-      pos_key,
-      door_pos,
-      pos_door,
+      keys,
+      doors,
     })
   }
 
-  // Two search layers: inner layer finds reachable keys and the number of steps to each.
-  // Outer layer tries each of those outcomes to discover new outcomes, summing steps
-  // Goal state is when all keys are collected (doors do not actually matter for this)
   fn part1(&self, input: &Parsed, _: Option<String>) -> Result<P1Out> {
-    Ok(search_outer(input))
+    solve_area(input)
   }
 
   fn part2(&self, _input: &Parsed, _: Option<String>) -> Result<P2Out> {
+    // TODO: Split the input into four sections, removing doors in each quadrant for which the key is in
+    // a different quadrant. Solve each area independently this way, and add their results together.
+    // Should take just 10% as long as part 1 does due to massively reduced search spaces.
     Ok(0)
   }
 }

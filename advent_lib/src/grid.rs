@@ -77,6 +77,15 @@ impl Infinite2dSet {
     self.state.iter().map(|k| from_key(*k))
   }
 }
+impl FromIterator<(i32, i32)> for Infinite2dSet {
+  fn from_iter<T: IntoIterator<Item = (i32, i32)>>(iter: T) -> Self {
+    let mut set = Infinite2dSet::new(1);
+    for (x, y) in iter.into_iter() {
+      set.insert(x, y);
+    }
+    set
+  }
+}
 
 #[derive(Clone, PartialEq)]
 pub struct Infinite2dGrid<V>
@@ -174,5 +183,14 @@ impl<V: Clone + PartialEq> Infinite2dGrid<V> {
 
   pub fn is_empty(&self) -> bool {
     self.state.is_empty()
+  }
+}
+impl<V: Clone + PartialEq> FromIterator<((i32, i32), V)> for Infinite2dGrid<V> {
+  fn from_iter<T: IntoIterator<Item = ((i32, i32), V)>>(iter: T) -> Self {
+    let mut grid = Infinite2dGrid::new(1);
+    for ((x, y), v) in iter.into_iter() {
+      grid.insert(x, y, v);
+    }
+    grid
   }
 }
