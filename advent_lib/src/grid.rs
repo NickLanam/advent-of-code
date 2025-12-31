@@ -194,3 +194,14 @@ impl<V: Clone + PartialEq> FromIterator<((i32, i32), V)> for Infinite2dGrid<V> {
     grid
   }
 }
+
+// The `.entries` method returns this; enable building from such an iterator for convenience
+impl<'a, V: Clone + PartialEq> FromIterator<(i32, i32, &'a V)> for Infinite2dGrid<V> {
+  fn from_iter<T: IntoIterator<Item = (i32, i32, &'a V)>>(iter: T) -> Self {
+    let mut grid = Infinite2dGrid::new(1);
+    for (x, y, v) in iter.into_iter() {
+      grid.insert(x, y, v.clone());
+    }
+    grid
+  }
+}

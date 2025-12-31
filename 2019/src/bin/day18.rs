@@ -9,6 +9,7 @@ use advent_lib::{
 };
 use anyhow::{Result, bail};
 use fnv::{FnvBuildHasher, FnvHashSet};
+use itertools::Itertools;
 
 type P1Out = usize;
 type P2Out = usize;
@@ -17,6 +18,7 @@ type P2Out = usize;
 type Keys = u32;
 type Doors = u32;
 
+#[derive(Clone)]
 struct Parsed {
   start: (i32, i32),
   walls: Infinite2dSet,
@@ -63,7 +65,7 @@ fn solve_area(input: &Parsed) -> Result<usize> {
   let mut seen =
     FnvHashSet::<(i32, i32, Keys)>::with_capacity_and_hasher(10_000, FnvBuildHasher::default());
 
-  let all_keys = (1 << input.keys.len()) - 1;
+  let all_keys = input.keys.values().fold(0_u32, |acc, &key_id| acc | key_id);
 
   while let Some(Reverse((cost, (rx, ry), held_keys))) = frontier.pop() {
     if held_keys == all_keys {
@@ -126,11 +128,63 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     solve_area(input)
   }
 
-  fn part2(&self, _input: &Parsed, _: Option<String>) -> Result<P2Out> {
-    // TODO: Split the input into four sections, removing doors in each quadrant for which the key is in
-    // a different quadrant. Solve each area independently this way, and add their results together.
-    // Should take just 10% as long as part 1 does due to massively reduced search spaces.
-    Ok(0)
+  /// Split into four regions, each of which ignores doors whose keys are in other regions.
+  /// Solve each independently, sum their answers, and that's what we're looking for.
+  fn part2(&self, base_input: &Parsed, _: Option<String>) -> Result<P2Out> {
+    let (base_x, base_y) = base_input.start;
+
+    // Each sub-section can use the same patched set of walls. Faster to set up that way.
+    let mut patched_walls = base_input.walls.clone();
+    for (wx, wy) in [
+      (base_x, base_y),
+      (base_x, base_y - 1),
+      (base_x + 1, base_y),
+      (base_x, base_y + 1),
+      (base_x - 1, base_y),
+    ] {
+      patched_walls.insert(wx, wy);
+    }
+
+    let mut answer = 0;
+    for (start_x, start_y, is_west, is_north) in [
+      (base_x - 1, base_y - 1, true, true),
+      (base_x + 1, base_y - 1, false, true),
+      (base_x - 1, base_y + 1, true, false),
+      (base_x + 1, base_y + 1, false, false),
+    ] {
+      let mut input = base_input.clone();
+      input.walls = patched_walls.clone();
+      input.start = (start_x, start_y);
+
+      // Keep only the keys and doors that are within this region's boundaries.
+      // Additionally, drop doors for which the keys aren't in this region.
+      let kept_keys: Infinite2dGrid<Keys> = base_input
+        .keys
+        .entries()
+        .filter(|&(x, y, _key_id)| {
+          let x_ok = if is_west { x <= start_x } else { x >= start_x };
+          let y_ok = if is_north { y <= start_y } else { y >= start_y };
+          x_ok && y_ok
+        })
+        .collect();
+
+      let kept_doors: Infinite2dGrid<Doors> = base_input
+        .doors
+        .entries()
+        .filter(|&(x, y, door_id)| {
+          let x_ok = if is_west { x <= start_x } else { x >= start_x };
+          let y_ok = if is_north { y <= start_y } else { y >= start_y };
+          x_ok && y_ok && kept_keys.values().contains(door_id)
+        })
+        .collect();
+
+      input.keys = kept_keys;
+      input.doors = kept_doors;
+
+      answer += solve_area(&input)?;
+    }
+
+    Ok(answer)
   }
 }
 
