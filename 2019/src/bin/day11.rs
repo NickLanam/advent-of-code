@@ -101,7 +101,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       })
       .collect::<Vec<String>>()
       .join("\n");
-    out.insert_str(0, "\n");
+    out.insert(0, '\n');
     Ok(out)
   }
 }

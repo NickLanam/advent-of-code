@@ -50,7 +50,7 @@ fn find_paths(input: &Parsed, start: (i32, i32)) -> Vec<Path> {
     }
   }
 
-  return paths;
+  paths
 }
 
 fn solve_area(input: &Parsed) -> Result<usize> {

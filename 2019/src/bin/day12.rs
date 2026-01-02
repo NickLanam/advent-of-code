@@ -10,7 +10,7 @@ struct Point3d {
   z: i64,
 }
 impl Point3d {
-  fn energy(self: &Self) -> usize {
+  fn energy(&self) -> usize {
     (self.x.abs() + self.y.abs() + self.z.abs()) as usize
   }
 }
@@ -21,11 +21,11 @@ struct Particle {
   vel: Point3d,
 }
 impl Particle {
-  fn energy(self: &Self) -> usize {
+  fn energy(&self) -> usize {
     self.pos.energy() * self.vel.energy()
   }
 
-  fn step_gravity(self: &mut Self, other: &mut Particle) {
+  fn step_gravity(&mut self, other: &mut Particle) {
     match self.pos.x.cmp(&other.pos.x) {
       Ordering::Less => {
         self.vel.x += 1;
@@ -63,7 +63,7 @@ impl Particle {
     }
   }
 
-  fn step_position(self: &mut Self) {
+  fn step_position(&mut self) {
     self.pos.x += self.vel.x;
     self.pos.y += self.vel.y;
     self.pos.z += self.vel.z;

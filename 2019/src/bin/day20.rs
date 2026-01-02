@@ -131,10 +131,10 @@ impl Day<Maze, P1Out, P2Out> for Solver {
             // assume that we'll go through it.
             frontier.push_back((*px, *py, cost + 2));
           }
-        } else if maze.dots.contains(nx, ny) || (nx == maze.exit.0 && ny == maze.exit.1) {
-          if seen.insert(nx, ny) {
-            frontier.push_back((nx, ny, cost + 1));
-          }
+        } else if (maze.dots.contains(nx, ny) || (nx == maze.exit.0 && ny == maze.exit.1))
+          && seen.insert(nx, ny)
+        {
+          frontier.push_back((nx, ny, cost + 1));
         }
       }
     }

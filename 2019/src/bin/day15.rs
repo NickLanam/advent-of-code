@@ -20,9 +20,9 @@ enum Day15Dir {
   West,
   East, // 3
 }
-impl Into<i64> for Day15Dir {
-  fn into(self) -> i64 {
-    match &self {
+impl From<Day15Dir> for i64 {
+  fn from(val: Day15Dir) -> Self {
+    match &val {
       Day15Dir::Invalid => panic!("0 is not a valid direction to turn"),
       Day15Dir::North => 1,
       Day15Dir::South => 2,
@@ -94,7 +94,7 @@ fn discover_maze(initial_tape: &[i64]) -> Result<Infinite2dGrid<Tile>> {
     let mut result = execute(initial_tape, &[dir.into()], Some(0), Some(0))?;
     while !goal_found {
       // Follow the wall to find every position in the grid.
-      let outcome = Tile::from(*result.outputs.get(0).context("No output happened")?);
+      let outcome = Tile::from(*result.outputs.first().context("No output happened")?);
       match outcome {
         Tile::Wall => {
           let (wall_x, wall_y) = dir.apply(bot_x, bot_y);

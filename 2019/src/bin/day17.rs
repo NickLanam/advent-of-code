@@ -134,21 +134,19 @@ fn find_full_path(map: &Map) -> Vec<String> {
       streak += 1;
     } else if l_set {
       (bot_x, bot_y) = l_coord;
-      bot_dir = bot_dir + Rotation::L;
+      bot_dir += Rotation::L;
       if streak > 0 {
         let l = path.len();
-        path[l - 1].extend((streak + 1).to_string().chars());
-        // path.push((streak + 1).to_string());
+        path[l - 1].push_str(&(streak + 1).to_string());
         streak = 0;
       }
       path.push("L".to_owned());
     } else if r_set {
       (bot_x, bot_y) = r_coord;
-      bot_dir = bot_dir + Rotation::R;
+      bot_dir += Rotation::R;
       if streak > 0 {
         let l = path.len();
-        path[l - 1].extend((streak + 1).to_string().chars());
-        // path.push((streak + 1).to_string());
+        path[l - 1].push_str(&(streak + 1).to_string());
         streak = 0;
       }
       path.push("R".to_owned());
@@ -159,8 +157,7 @@ fn find_full_path(map: &Map) -> Vec<String> {
   }
   if streak > 0 {
     let l = path.len();
-    path[l - 1].extend((streak + 1).to_string().chars());
-    // path.push((streak + 1).to_string());
+    path[l - 1].push_str(&(streak + 1).to_string());
   }
 
   path
@@ -173,8 +170,9 @@ fn too_long_path(slice: &Vec<&str>) -> bool {
 
 /// The only hard part of the puzzle. It's really just BFS, but with tricky
 /// logic for computing valid neighbors and verifying goal state.
-fn compress_path(full_path: &Vec<String>) -> Result<(Vec<&str>, [Vec<&str>; 3])> {
+fn compress_path(full_path: &[String]) -> Result<(Vec<&str>, [Vec<&str>; 3])> {
   // Use BFS to try patterns until we find one that works
+  #[allow(clippy::type_complexity)]
   let mut frontier: VecDeque<(Vec<&str>, [Option<Vec<&str>>; 3])> = VecDeque::new();
   frontier.push_back((vec![], [None, None, None]));
 
@@ -251,13 +249,13 @@ fn compress_path(full_path: &Vec<String>) -> Result<(Vec<&str>, [Vec<&str>; 3])>
       let mut next_a = a_opt.clone();
       let mut next_b = b_opt.clone();
       let mut next_c = c_opt.clone();
-      let candidate: Vec<&str> = remain[0..i].iter().map(|&s| s).collect();
+      let candidate: Vec<&str> = remain[0..i].to_vec();
       if too_long_path(&candidate) {
         break;
       }
-      if let Some(_) = a_opt {
-        if let Some(_) = b_opt {
-          if let Some(_) = c_opt {
+      if a_opt.is_some() {
+        if b_opt.is_some() {
+          if c_opt.is_some() {
             // This solution doesn't consume the whole string, skip it
             continue 'bfs;
           } else {
@@ -322,7 +320,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         && scaffolds.contains(x, y - 1)
         && scaffolds.contains(x, y + 1)
       {
-        score += (x * y).abs() as usize;
+        score += (x * y).unsigned_abs() as usize;
       }
     }
     Ok(score)

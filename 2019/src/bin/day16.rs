@@ -80,13 +80,13 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     // - There's a triangle of 0s in the math, and a 7-digit offset... so we can skip
     //   computing anything at all for #offset digits (2.5sec -> 0.150sec)
     let offset = init[0..7].iter().fold(0, |acc, n| (acc * 10) + n) as usize;
-    let mut line = init
+    let mut line: Vec<i64> = init
       .iter()
       .cycle()
       .take(init.len() * 10_000)
       .skip(offset) // Order matters, here!
-      .map(|&n| n)
-      .collect::<Vec<i64>>();
+      .copied()
+      .collect();
 
     for _round in 1..=ROUNDS {
       let mut sums = vec![0; line.len() + 1];
