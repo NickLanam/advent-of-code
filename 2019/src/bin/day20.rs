@@ -5,6 +5,7 @@ use advent_lib::{
   runner::{Day, PartId},
 };
 use anyhow::{Result, bail};
+use fnv::{FnvBuildHasher, FnvHashSet};
 
 type P1Out = usize;
 type P2Out = usize;
@@ -13,7 +14,7 @@ struct Maze {
   entry: (i32, i32),
   exit: (i32, i32),
   dots: Infinite2dSet,
-  portals: Infinite2dGrid<(String, i32, i32)>, // Two-way
+  portals: Infinite2dGrid<(String, bool, i32, i32)>, // Bool true = inner portal, false = outer portal
 }
 
 struct Solver;
@@ -37,7 +38,7 @@ impl Day<Maze, P1Out, P2Out> for Solver {
     let mut dots = Infinite2dSet::new(w * h / 2);
     let mut portals = Infinite2dGrid::new(150);
 
-    let mut unmatched: Vec<(String, i32, i32)> = vec![];
+    let mut unmatched: Vec<(String, bool, i32, i32)> = vec![];
 
     let mut mark_notable = |x: i32, y: i32, c0: char, c1: char| {
       let s = format!("{c0}{c1}");
@@ -45,12 +46,13 @@ impl Day<Maze, P1Out, P2Out> for Solver {
         entry = (x, y);
       } else if s == "ZZ" {
         exit = (x, y);
-      } else if let Some(match_index) = unmatched.iter().position(|(name, _, _)| *name == s) {
-        let (_, x2, y2) = unmatched.remove(match_index);
-        portals.insert(x, y, (s.to_owned(), x2, y2));
-        portals.insert(x2, y2, (s.to_owned(), x, y));
+      } else if let Some(match_index) = unmatched.iter().position(|(name, _, _, _)| *name == s) {
+        let (_, was_inner, x2, y2) = unmatched.remove(match_index);
+        portals.insert(x, y, (s.to_owned(), !was_inner, x2, y2));
+        portals.insert(x2, y2, (s.to_owned(), was_inner, x, y));
       } else {
-        unmatched.push((s, x, y));
+        let inner = x > 2 && (x as usize) < (w - 2) && y > 2 && (y as usize) < (h - 2);
+        unmatched.push((s, inner, x, y));
       }
     };
 
@@ -107,11 +109,10 @@ impl Day<Maze, P1Out, P2Out> for Solver {
     })
   }
 
+  /// Given the parsed maze (the hard part of this puzzle),
+  /// do a basic BFS where the portal locations cause neighbors to be weird.
+  /// Travel cost is always 1, so Disjkstra's is overkill - BFS already solves optimally.
   fn part1(&self, maze: &Maze, _: Option<String>) -> Result<P1Out> {
-    // Given the parsed maze (the hard part of this puzzle),
-    // do a basic BFS where the portal locations cause neighbors to be weird.
-    // Travel cost is always 1, so Disjkstra's is overkill - BFS already solves optimally.
-
     let mut seen = Infinite2dSet::new(maze.dots.len() + maze.portals.len());
     let mut frontier: VecDeque<(i32, i32, usize)> = VecDeque::new();
     frontier.push_back((maze.entry.0, maze.entry.1, 0));
@@ -123,7 +124,7 @@ impl Day<Maze, P1Out, P2Out> for Solver {
       }
 
       for (nx, ny) in [(fx, fy - 1), (fx + 1, fy), (fx, fy + 1), (fx - 1, fy)] {
-        if let Some((_name, px, py)) = maze.portals.get(nx, ny) {
+        if let Some((_name, _inner, px, py)) = maze.portals.get(nx, ny) {
           if seen.insert(nx, ny) {
             seen.insert(*px, *py);
             // Walking onto a portal space doesn't do anything, but makes the other end a neighbor.
@@ -142,8 +143,59 @@ impl Day<Maze, P1Out, P2Out> for Solver {
     bail!("Failed to find a path");
   }
 
-  fn part2(&self, _maze: &Maze, _: Option<String>) -> Result<P2Out> {
-    Ok(0)
+  /// Same idea as part 1, but now we track depth and reachability as well.
+  fn part2(&self, maze: &Maze, _: Option<String>) -> Result<P2Out> {
+    // Now storing (x, y, depth) instead of just (x, y)
+    let mut seen = FnvHashSet::<(i32, i32, usize)>::with_capacity_and_hasher(
+      maze.dots.len() + maze.portals.len(),
+      FnvBuildHasher::default(),
+    );
+    // First one is depth, second is cost
+    let mut frontier: VecDeque<(i32, i32, usize, usize)> = VecDeque::new();
+    frontier.push_back((maze.entry.0, maze.entry.1, 0, 0));
+    seen.insert((maze.entry.0, maze.entry.1, 0));
+
+    while let Some((fx, fy, depth, cost)) = frontier.pop_front() {
+      if depth > 1_000 {
+        bail!("Depth reached 1,000 - something definitely went wrong");
+      }
+      if fx == maze.exit.0 && fy == maze.exit.1 && depth == 0 {
+        // TODO: 2038 is too low (but I got the correct sample answers, even discovered the same optimal paths)...
+        println!(
+          "  At depth 0, found the exit at {:?} costing {cost}",
+          maze.exit
+        );
+        return Ok(cost);
+      }
+
+      for (nx, ny) in [(fx, fy - 1), (fx + 1, fy), (fx, fy + 1), (fx - 1, fy)] {
+        if let Some((_name, inner, px, py)) = maze.portals.get(nx, ny) {
+          if (*inner || depth > 0) && seen.insert((nx, ny, depth)) {
+            let next_depth = if *inner {
+              depth + 1
+            } else {
+              depth.saturating_sub(1)
+            };
+            seen.insert((*px, *py, next_depth));
+            frontier.push_back((*px, *py, next_depth, cost + 2));
+            if next_depth < 5 {
+              println!(
+                "Walk to ({nx}, {ny}) -> {:?}, depth becomes {next_depth}, next cost {}",
+                maze.portals.get(nx, ny),
+                cost + 2
+              );
+            }
+          }
+        } else if (maze.dots.contains(nx, ny)
+          || (nx == maze.exit.0 && ny == maze.exit.1 && depth == 0))
+          && seen.insert((nx, ny, depth))
+        {
+          frontier.push_back((nx, ny, depth, cost + 1));
+        }
+      }
+    }
+
+    bail!("Failed to find a path");
   }
 }
 
