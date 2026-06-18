@@ -18,7 +18,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
       let (a, b) = line.split_once('-').context("Can't split that line")?;
       out.push((a.parse()?, b.parse()?))
     }
-    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out.sort_by_key(|a| a.0);
     Ok(out)
   }
 

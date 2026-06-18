@@ -17,7 +17,7 @@ fn springcode_to_intcode_input(lines: &Vec<&str>, extend_range: bool) -> Result<
     lines
       .iter()
       .chain(&[if extend_range { "RUN" } else { "WALK" }])
-      .map(|line| {
+      .flat_map(|line| {
         line
           .chars()
           .collect::<Vec<char>>()
@@ -26,15 +26,14 @@ fn springcode_to_intcode_input(lines: &Vec<&str>, extend_range: bool) -> Result<
           .map(|&c| c as u8 as i64)
           .collect::<Vec<i64>>()
       })
-      .flatten()
       .collect(),
   )
 }
 
-fn print_springcode_output(outputs: &Vec<i64>) {
+fn print_springcode_output(outputs: &[i64]) {
   for &n in outputs.iter() {
     // The main printable range in ASCII, plus newline (10)
-    if n == 10 || (n >= 32 && n <= 126) {
+    if n == 10 || (32..=126).contains(&n) {
       print!("{}", n as u8 as char);
     } else {
       print!("{n}");

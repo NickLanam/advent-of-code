@@ -263,7 +263,7 @@ impl Day<Maze, P1Out, P2Out> for Solver {
             *dist_next = cost + 1;
             heap.push(State {
               cost: cost + 1,
-              depth: depth,
+              depth,
               x: nx,
               y: ny,
             });

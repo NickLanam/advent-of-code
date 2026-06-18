@@ -141,7 +141,7 @@ fn solve(in_groups: &[Group], boost: usize) -> Result<(Team, usize)> {
 
     // ATTACK PHASE
     // Attacks happen in initiative order, with... no tiebreaker? Hope stable sort is what we want!
-    groups.sort_by(|a, b| b.initiative.cmp(&a.initiative));
+    groups.sort_by_key(|b| std::cmp::Reverse(b.initiative));
 
     // Have to iterate on IDs since we're mutating the list as we run through it
     let ids: Vec<usize> = groups.iter().map(|g| g.id).collect();

@@ -6,10 +6,10 @@ type P2Out = u128;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Action {
-  ERROR(String),
-  REVERSE(),
-  CUT(i32),
-  INC(i32),
+  Error(String),
+  Reverse(),
+  Cut(i32),
+  Inc(i32),
 }
 // Size of deck, list of techniques
 type Parsed = (u128, Vec<Action>);
@@ -35,7 +35,7 @@ fn modular_inverse(a0: i128, m0: i128) -> i128 {
 
   while a > 1 {
     inv -= (a / m) * x0;
-    a = a % m;
+    a %= m;
     std::mem::swap(&mut a, &mut m);
     std::mem::swap(&mut x0, &mut inv);
   }
@@ -64,11 +64,11 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
         .iter()
         .map(|line| {
           if line.starts_with("deal into new stack") {
-            Action::REVERSE()
+            Action::Reverse()
           } else if line.starts_with("cut ") {
-            Action::CUT(line.split_at("cut ".len()).1.parse::<i32>().unwrap())
+            Action::Cut(line.split_at("cut ".len()).1.parse::<i32>().unwrap())
           } else if line.starts_with("deal with increment ") {
-            Action::INC(
+            Action::Inc(
               line
                 .split_at("deal with increment ".len())
                 .1
@@ -76,7 +76,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
                 .unwrap(),
             )
           } else {
-            Action::ERROR(line.to_string())
+            Action::Error(line.to_string())
           }
         })
         .collect(),
@@ -88,15 +88,15 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let mut pos = if sample_name.is_some() { 7 } else { 2019 };
     for action in actions.iter() {
       match action {
-        Action::ERROR(cause) => bail!("{cause}"),
-        Action::REVERSE() => {
+        Action::Error(cause) => bail!("{cause}"),
+        Action::Reverse() => {
           pos = deck_size - 1 - pos;
         }
-        &Action::CUT(v) => {
+        &Action::Cut(v) => {
           let n: u128 = if v > 0 {
             v as u128
           } else {
-            deck_size - (v.abs() as u128)
+            deck_size - (v.unsigned_abs() as u128)
           };
 
           if pos < n {
@@ -105,7 +105,7 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
             pos -= n;
           }
         }
-        &Action::INC(n) => {
+        &Action::Inc(n) => {
           // We deal the entire deck to positions that jump by n at a time, wrapping.
           // That's just a simple multiplication and then modulo operation.
           // Even with this division operation, part 1 runs in about 600 nanoseconds on a Ryzen 9 3900X.
@@ -129,15 +129,15 @@ impl Day<Parsed, P1Out, P2Out> for Solver {
     let len = *deck_size as i128;
     for action in actions.iter().rev() {
       match action {
-        Action::ERROR(cause) => bail!("{cause}"),
-        Action::REVERSE() => {
+        Action::Error(cause) => bail!("{cause}"),
+        Action::Reverse() => {
           a = -a;
           b = len - b - 1;
         }
-        &Action::CUT(n) => {
+        &Action::Cut(n) => {
           b = (b + (n as i128)).rem_euclid(len);
         }
-        &Action::INC(n) => {
+        &Action::Inc(n) => {
           let z = modular_inverse(n as i128, len);
           a = (a * z).rem_euclid(len);
           b = (b * z).rem_euclid(len);
