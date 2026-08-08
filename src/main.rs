@@ -1,8 +1,8 @@
 use advent_lib::{bootstrap, color::*, runner};
 use anyhow::{Context, Result};
 use cargo_metadata::MetadataCommand;
-use chrono::{Datelike, prelude::Utc};
 use clap::Parser;
+use jiff::Zoned;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -16,7 +16,7 @@ struct CommandLineArgs {
 fn main() -> Result<()> {
   let args = CommandLineArgs::parse();
   let day = args.day;
-  let year = args.year.unwrap_or(Utc::now().year().try_into().unwrap());
+  let year = args.year.unwrap_or(Zoned::now().year().try_into().unwrap());
 
   let binding = MetadataCommand::new().exec().unwrap().workspace_root;
   let workspace_root = PathBuf::from(&binding);

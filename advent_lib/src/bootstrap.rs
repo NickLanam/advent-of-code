@@ -1,11 +1,7 @@
 use crate::color::*;
 use crate::paths::{RelevantPaths, get_relevant_paths};
 use anyhow::{Context, Result, bail};
-use chrono::TimeZone;
-use chrono::{
-  Datelike,
-  prelude::{FixedOffset, NaiveDate, Utc},
-};
+use jiff::{Unit, Zoned, ZonedDifference, civil::date};
 use std::fs;
 use std::io::{self, Write};
 use std::os::unix::fs::MetadataExt;
@@ -20,7 +16,7 @@ type TaskResult = Result<Option<String>>;
 /// * If that day's input is not yet downloaded, checks if it's available and then downloads it if so.
 /// * If the input is not available yet, waits until it is and shows a countdown clock until then.
 pub fn setup(year: u16, day: u16, workspace_root: &Path) -> Result<()> {
-  let this_year = Utc::now()
+  let this_year = Zoned::now()
     .year()
     .try_into()
     .context("Couldn't get current year")?;
@@ -143,51 +139,32 @@ fn maybe_init_day(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {
 }
 
 fn wait_for_input_available(year: u16, day: u16) -> Result<bool> {
-  // Puzzles unlock at midnight on the east coast of the USA, which is UTC-5 during December.
-  let unlock_ms = FixedOffset::east_opt(-5 * 3_600)
-    .unwrap()
-    .from_local_datetime(
-      &NaiveDate::from_ymd_opt(year.into(), 12, day.into())
-        .unwrap()
-        .and_hms_nano_opt(0, 0, 0, 0)
-        .unwrap(),
-    )
-    .unwrap()
-    .to_utc()
-    .timestamp_millis();
+  // Puzzles unlock at midnight on the east coast of the USA.
+  let unlock_datetime = date(year as i16, 12, day as i8)
+    .at(0, 0, 0, 0)
+    .in_tz("America/New_York")?;
+  let mut now_datetime = Zoned::now().in_tz("America/New_York")?;
 
-  let mut now_ms = Utc::now().timestamp_millis();
-  let mut remain_ms = unlock_ms - now_ms;
-  let fancy_duration = |millis| -> String {
-    let delta = chrono::TimeDelta::milliseconds(millis);
-    if delta.num_days() == 0 {
-      format!(
-        "{RED}{:0>2}:{:0>2}:{:0>2}{RESET}",
-        delta.num_hours(),
-        delta.num_minutes() % 60,
-        delta.num_seconds() % 60
-      )
-    } else {
-      format!("{} days", delta.num_days())
-    }
-  };
+  let span_until = ZonedDifference::new(&unlock_datetime)
+    .smallest(Unit::Second)
+    .largest(Unit::Day);
 
-  if remain_ms > 0 {
-    let mut s = fancy_duration(remain_ms);
-    println!("{RED} ✕{RESET} Waiting until puzzle unlocks in {s}");
-    while remain_ms > 0 {
+  if now_datetime < unlock_datetime {
+    let mut delta = now_datetime.until(span_until)?;
+    println!("{RED} ✕{RESET} Waiting until puzzle unlocks in {RED}{delta:#}{RESET}");
+    while now_datetime < unlock_datetime {
       thread::sleep(Duration::from_secs(1));
-      now_ms = Utc::now().timestamp_millis();
-      remain_ms = unlock_ms - now_ms;
-      s = fancy_duration(remain_ms);
+      now_datetime = Zoned::now().in_tz("America/New_York")?;
+      delta = now_datetime.until(span_until)?;
       println!(
-        "{CLEAR_TO_START_OF_PREVIOUS_LINE}{RED} ✕{RESET} Waiting until puzzle unlocks in {s}"
+        "{CLEAR_TO_START_OF_PREVIOUS_LINE}{RED} ✕{RESET} Waiting until puzzle unlocks in {RED}{delta:#}{RESET}"
       );
     }
     print!("{CLEAR_TO_START_OF_PREVIOUS_LINE}");
-    return Ok(true);
+    Ok(true)
+  } else {
+    Ok(false)
   }
-  Ok(false)
 }
 
 fn maybe_download_input(year: u16, day: u16, paths: &RelevantPaths) -> TaskResult {

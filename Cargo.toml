@@ -13,11 +13,11 @@ repository = "https://github.com/NickLanam/advent-of-code"
 rust-version = "1.96.1"
 
 [dependencies]
-chrono = "0.4.39"
 clap = { version = "4.5.23", features = ["derive"] }
 advent_lib = { path = "./advent_lib" }
 cargo_metadata = "0.19.1"
 anyhow = "1.0.95"
+jiff = "0.2.35"
 
 [workspace.package]
 version = "1.0.0"
