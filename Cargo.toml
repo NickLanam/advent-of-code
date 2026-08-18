@@ -10,7 +10,7 @@ description = "Advent of Code"
 readme = "README.md"
 homepage = "https://adventofcode.com"
 repository = "https://github.com/NickLanam/advent-of-code"
-rust-version = "1.96.1"
+rust-version = "1.97.1"
 
 [dependencies]
 clap = { version = "4.5.23", features = ["derive"] }
