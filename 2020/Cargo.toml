@@ -9,3 +9,4 @@ edition.workspace = true
 advent_lib = { workspace = true }
 anyhow = { workspace = true }
 itertools = "0.14.0"
+fnv = "1.0.7"
