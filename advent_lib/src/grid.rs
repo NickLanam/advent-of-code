@@ -7,10 +7,40 @@ pub fn to_key(x: i32, y: i32) -> u64 {
   ((xu as u64) << 32) + (yu as u64)
 }
 
+pub fn to_key3(x: i32, y: i32, z: i32) -> u128 {
+  let xu = x as u32;
+  let yu = y as u32;
+  let zu = z as u32;
+  ((xu as u128) << 64) + ((yu as u128) << 32) + (zu as u128)
+}
+
+pub fn to_key4(x: i32, y: i32, z: i32, w: i32) -> u128 {
+  let xu = x as u32;
+  let yu = y as u32;
+  let zu = z as u32;
+  let wu = w as u32;
+  ((xu as u128) << 96) + ((yu as u128) << 64) + ((zu as u128) << 32) + (wu as u128)
+}
+
 pub fn from_key(k: u64) -> (i32, i32) {
   let x = (k >> 32) as u32;
   let y = k as u32;
   (x as i32, y as i32)
+}
+
+pub fn from_key3(k: u128) -> (i32, i32, i32) {
+  let x = (k >> 64) as u32;
+  let y = ((k >> 32) & 0xFFFFFFFF) as u32;
+  let z = k as u32;
+  (x as i32, y as i32, z as i32)
+}
+
+pub fn from_key4(k: u128) -> (i32, i32, i32, i32) {
+  let x = (k >> 96) as u32;
+  let y = ((k >> 64) & 0xFFFFFFFF) as u32;
+  let z = ((k >> 32) & 0xFFFFFFFF) as u32;
+  let w = k as u32;
+  (x as i32, y as i32, z as i32, w as i32)
 }
 
 #[derive(Clone, PartialEq)]
@@ -82,6 +112,156 @@ impl FromIterator<(i32, i32)> for Infinite2dSet {
     let mut set = Infinite2dSet::new(1);
     for (x, y) in iter.into_iter() {
       set.insert(x, y);
+    }
+    set
+  }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Infinite3dSet {
+  state: HashSet<u128, FnvBuildHasher>,
+}
+
+impl Infinite3dSet {
+  pub fn new(capacity: usize) -> Infinite3dSet {
+    Infinite3dSet {
+      state: HashSet::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
+    }
+  }
+
+  pub fn from_input_layer0(lines: &[String], transformer: impl Fn(char) -> bool) -> Infinite3dSet {
+    assert!(
+      !lines.is_empty(),
+      "Infinite3dSet::from_input_layer0 expects at least one line"
+    );
+    // Initial capacity assumes one flat layer (2020 Day 17) until we need something more advanced
+    let h = lines.len();
+    let w = lines[0].len();
+    let mut set = Infinite3dSet::new(w * h);
+    for (y, row) in lines.iter().enumerate() {
+      for (x, c) in row.chars().enumerate() {
+        if transformer(c) {
+          set.insert(x as i32, y as i32, 0);
+        }
+      }
+    }
+    set
+  }
+
+  pub fn len(&self) -> usize {
+    self.state.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.state.is_empty()
+  }
+
+  pub fn contains(&self, x: i32, y: i32, z: i32) -> bool {
+    self.state.contains(&to_key3(x, y, z))
+  }
+
+  pub fn insert(&mut self, x: i32, y: i32, z: i32) -> bool {
+    self.state.insert(to_key3(x, y, z))
+  }
+
+  pub fn remove(&mut self, x: i32, y: i32, z: i32) -> bool {
+    self.state.remove(&to_key3(x, y, z))
+  }
+
+  pub fn toggle(&mut self, x: i32, y: i32, z: i32) -> bool {
+    let k = to_key3(x, y, z);
+    let is_present = self.state.contains(&k);
+    if is_present {
+      self.state.remove(&k)
+    } else {
+      self.state.insert(k)
+    }
+  }
+
+  pub fn keys(&self) -> impl Iterator<Item = (i32, i32, i32)> + use<'_> {
+    self.state.iter().map(|k| from_key3(*k))
+  }
+}
+impl FromIterator<(i32, i32, i32)> for Infinite3dSet {
+  fn from_iter<T: IntoIterator<Item = (i32, i32, i32)>>(iter: T) -> Self {
+    let mut set = Infinite3dSet::new(1);
+    for (x, y, z) in iter.into_iter() {
+      set.insert(x, y, z);
+    }
+    set
+  }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Infinite4dSet {
+  state: HashSet<u128, FnvBuildHasher>,
+}
+
+impl Infinite4dSet {
+  pub fn new(capacity: usize) -> Infinite4dSet {
+    Infinite4dSet {
+      state: HashSet::with_capacity_and_hasher(capacity, FnvBuildHasher::default()),
+    }
+  }
+
+  pub fn from_input_layer0(lines: &[String], transformer: impl Fn(char) -> bool) -> Infinite4dSet {
+    assert!(
+      !lines.is_empty(),
+      "Infinite4dSet::from_input_layer0 expects at least one line"
+    );
+    // Initial capacity assumes one flat layer (2020 Day 17) until we need something more advanced
+    let h = lines.len();
+    let w = lines[0].len();
+    let mut set = Infinite4dSet::new(w * h);
+    for (y, row) in lines.iter().enumerate() {
+      for (x, c) in row.chars().enumerate() {
+        if transformer(c) {
+          set.insert(x as i32, y as i32, 0, 0);
+        }
+      }
+    }
+    set
+  }
+
+  pub fn len(&self) -> usize {
+    self.state.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.state.is_empty()
+  }
+
+  pub fn contains(&self, x: i32, y: i32, z: i32, w: i32) -> bool {
+    self.state.contains(&to_key4(x, y, z, w))
+  }
+
+  pub fn insert(&mut self, x: i32, y: i32, z: i32, w: i32) -> bool {
+    self.state.insert(to_key4(x, y, z, w))
+  }
+
+  pub fn remove(&mut self, x: i32, y: i32, z: i32, w: i32) -> bool {
+    self.state.remove(&to_key4(x, y, z, w))
+  }
+
+  pub fn toggle(&mut self, x: i32, y: i32, z: i32, w: i32) -> bool {
+    let k = to_key4(x, y, z, w);
+    let is_present = self.state.contains(&k);
+    if is_present {
+      self.state.remove(&k)
+    } else {
+      self.state.insert(k)
+    }
+  }
+
+  pub fn keys(&self) -> impl Iterator<Item = (i32, i32, i32, i32)> + use<'_> {
+    self.state.iter().map(|k| from_key4(*k))
+  }
+}
+impl FromIterator<(i32, i32, i32, i32)> for Infinite4dSet {
+  fn from_iter<T: IntoIterator<Item = (i32, i32, i32, i32)>>(iter: T) -> Self {
+    let mut set = Infinite4dSet::new(1);
+    for (x, y, z, w) in iter.into_iter() {
+      set.insert(x, y, z, w);
     }
     set
   }
